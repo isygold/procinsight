@@ -10,6 +10,42 @@ import java.io.File
 
 class ProcessMonitor(private val context: Context? = null) {
 
+    /** Parse /proc/self/stat fields. The comm field (index 1) is in parentheses
+     *  and may contain spaces, so we find it by locating the first '(' and last ')'. */
+    private data class StatFields(
+        val pid: Int,
+        val comm: String,
+        val state: String,
+        val utime: Long,
+        val stime: Long,
+        val priority: Int,
+        val nice: Int,
+        val rssPages: Long
+    )
+
+    private fun parseStat(text: String): StatFields? {
+        return try {
+            val firstParen = text.indexOf('(')
+            val lastParen = text.lastIndexOf(')')
+            if (firstParen == -1 || lastParen == -1 || lastParen <= firstParen) return null
+
+            val pid = text.substring(0, firstParen).trim().toIntOrNull() ?: return null
+            val comm = text.substring(firstParen + 1, lastParen)
+            val rest = text.substring(lastParen + 1).trim().split("\\s+".toRegex())
+
+            StatFields(
+                pid = pid,
+                comm = comm,
+                state = rest.getOrNull(0)?.firstOrNull()?.toString() ?: "?",
+                utime = rest.getOrNull(11)?.toLongOrNull() ?: 0L,
+                stime = rest.getOrNull(12)?.toLongOrNull() ?: 0L,
+                priority = rest.getOrNull(15)?.toIntOrNull() ?: 0,
+                nice = rest.getOrNull(16)?.toIntOrNull() ?: 0,
+                rssPages = rest.getOrNull(21)?.toLongOrNull() ?: 0L
+            )
+        } catch (_: Exception) { null }
+    }
+
     suspend fun getProcesses(): List<ProcessInfo> = withContext(Dispatchers.IO) {
         val processes = mutableListOf<ProcessInfo>()
 
@@ -17,12 +53,8 @@ class ProcessMonitor(private val context: Context? = null) {
             val pid = Process.myPid()
             val uid = Process.myUid()
             val comm = File("/proc/self/comm").readText().trim()
-            val stat = File("/proc/self/stat").readText().trim()
-            val parts = stat.split(" ")
-            val state = parts.getOrNull(2)?.firstOrNull()?.toString() ?: "?"
-            val priority = parts.getOrNull(17)?.toIntOrNull() ?: 0
-            val nice = parts.getOrNull(18)?.toIntOrNull() ?: 0
-            val rssKb = (parts.getOrNull(23)?.toLongOrNull() ?: 0L) * 4L
+            val statText = File("/proc/self/stat").readText().trim()
+            val fields = parseStat(statText)
 
             val statusLines = File("/proc/self/status").readLines()
             val threads = statusLines.firstOrNull { it.startsWith("Threads:") }
@@ -32,9 +64,14 @@ class ProcessMonitor(private val context: Context? = null) {
 
             processes.add(ProcessInfo(
                 pid = pid, name = name, packageName = context?.packageName ?: "",
-                cpuPercent = 0f, userCpu = 0, kernelCpu = 0, totalCpu = 0,
-                threads = threads, memoryRss = rssKb, memoryPss = null,
-                priority = priority, nice = nice, state = state,
+                cpuPercent = 0f,
+                userCpu = fields?.utime ?: 0,
+                kernelCpu = fields?.stime ?: 0,
+                totalCpu = (fields?.utime ?: 0L) + (fields?.stime ?: 0L),
+                threads = threads, memoryRss = (fields?.rssPages ?: 0L) * 4L,
+                memoryPss = null,
+                priority = fields?.priority ?: 0, nice = fields?.nice ?: 0,
+                state = fields?.state ?: "?",
                 foreground = true, wakeups = 0, uid = uid
             ))
         } catch (_: Exception) { }
