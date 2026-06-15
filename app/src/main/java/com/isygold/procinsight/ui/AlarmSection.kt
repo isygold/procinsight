@@ -47,6 +47,12 @@ fun AlarmSection(alarms: List<AlarmInfo>) {
                     "Top: ${alarms.first().packageName} x${alarms.first().count}",
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "No alarm data. Enable Shizuku or grant Usage Stats for advanced monitoring.",
+                    fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             if (expanded) {

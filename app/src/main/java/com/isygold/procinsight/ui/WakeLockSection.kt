@@ -47,6 +47,12 @@ fun WakeLockSection(wakeLocks: List<WakeLockInfo>) {
                     "Worst: ${wakeLocks.first().name} (${wakeLocks.first().totalTimeMs / 1000}s)",
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "No wake lock data. Enable Shizuku or grant Usage Stats for advanced monitoring.",
+                    fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             if (expanded) {

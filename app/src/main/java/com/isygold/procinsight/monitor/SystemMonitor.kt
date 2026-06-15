@@ -1,11 +1,9 @@
 package com.isygold.procinsight.monitor
 
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
-import android.os.Process
 import com.isygold.procinsight.data.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +32,7 @@ class SystemMonitor(private val context: Context) {
             val batteryInfo = getBatteryInfo()
             val upTime = readUptime()
             val allPids = processCount()
-            val allThreads = threadCount()
+            val allThreads = processes.sumOf { it.threads }
 
             val totalCpu = cpuCores.map { it.usagePercent }.average().toFloat()
             val topCpu = processes.take(10)
@@ -57,7 +55,12 @@ class SystemMonitor(private val context: Context) {
                     wakeupCount = wakeLocks.size,
                     topCpuProcesses = topCpu,
                     topWakeLockApps = topWake,
-                    topAlarmApps = topAlarm
+                    topAlarmApps = topAlarm,
+                    monitorInfo = MonitorInfo(
+                        processesAvailable = topCpu.isNotEmpty(),
+                        wakeLocksAvailable = topWake.isNotEmpty(),
+                        alarmsAvailable = topAlarm.isNotEmpty()
+                    )
                 )
             )
         } catch (e: Exception) {
@@ -103,17 +106,4 @@ class SystemMonitor(private val context: Context) {
         } catch (_: Exception) { 0 }
     }
 
-    private fun threadCount(): Int {
-        return try {
-            var count = 0
-            File("/proc").listFiles { f -> f.isDirectory && f.name.all { it.isDigit() } }?.forEach { dir ->
-                try {
-                    val status = File(dir, "status").readLines()
-                    val threads = status.firstOrNull { it.startsWith("Threads:") }?.split("\\s+".toRegex())?.getOrNull(1)?.toIntOrNull() ?: 0
-                    count += threads
-                } catch (_: Exception) { }
-            }
-            count
-        } catch (_: Exception) { 0 }
-    }
 }

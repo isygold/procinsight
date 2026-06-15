@@ -55,9 +55,25 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                     Spacer(Modifier.height(8.dp))
                 }
 
-                items(stats.data.topWakeLockApps) { wl ->
-                    DetailedWakeLockCard(wl)
-                    Spacer(Modifier.height(4.dp))
+                if (stats.data.topWakeLockApps.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Enable Shizuku or grant Usage Stats access to view wake locks.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                } else {
+                    items(stats.data.topWakeLockApps) { wl ->
+                        DetailedWakeLockCard(wl)
+                        Spacer(Modifier.height(4.dp))
+                    }
                 }
 
                 item {
@@ -66,9 +82,25 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                     Spacer(Modifier.height(8.dp))
                 }
 
-                items(stats.data.topAlarmApps) { alarm ->
-                    DetailedAlarmCard(alarm)
-                    Spacer(Modifier.height(4.dp))
+                if (stats.data.topAlarmApps.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Enable Shizuku or grant Usage Stats access to view alarm data.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                } else {
+                    items(stats.data.topAlarmApps) { alarm ->
+                        DetailedAlarmCard(alarm)
+                        Spacer(Modifier.height(4.dp))
+                    }
                 }
             }
         }
