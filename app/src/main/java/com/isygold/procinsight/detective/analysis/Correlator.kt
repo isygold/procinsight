@@ -1,7 +1,5 @@
 package com.isygold.procinsight.detective.analysis
 
-import com.isygold.procinsight.detective.session.DataPoint
-
 /**
  * Cross-references findings from all detectors to identify the primary culprit
  * and correlate patterns (e.g., an app that both hogs CPU and holds wake locks).
@@ -22,8 +20,7 @@ class Correlator {
     fun correlate(
         cpuHogs: List<CpuHogDetector.CpuHogResult>,
         wakeLocks: List<WakeLockDetector.WakeLockAbuseResult>,
-        alarms: List<AlarmSpamDetector.AlarmSpamResult>,
-        points: List<DataPoint>
+        alarms: List<AlarmSpamDetector.AlarmSpamResult>
     ): List<CorrelatedCulprit> {
         val map = mutableMapOf<String, CulpritBuilder>()
 

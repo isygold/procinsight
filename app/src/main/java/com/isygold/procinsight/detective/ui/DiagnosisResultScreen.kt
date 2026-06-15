@@ -229,7 +229,7 @@ private fun FixStepCard(
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        forceStopPackage(context, culpritPkg)
+                        forceStopPackage(culpritPkg)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252)),
@@ -244,7 +244,7 @@ private fun FixStepCard(
     }
 }
 
-private fun forceStopPackage(context: Context, packageName: String) {
+private fun forceStopPackage(packageName: String) {
     try {
         Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
     } catch (_: Exception) { }

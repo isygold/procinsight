@@ -14,11 +14,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.isygold.procinsight.data.MonitorInfo
 import com.isygold.procinsight.data.ProcessInfo
 
 @Composable
-fun ProcessSection(processes: List<ProcessInfo>, monitorInfo: MonitorInfo = MonitorInfo()) {
+fun ProcessSection(processes: List<ProcessInfo>) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(

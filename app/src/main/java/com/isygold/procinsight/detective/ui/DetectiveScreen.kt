@@ -156,7 +156,7 @@ private fun RunningContent(
 
         Box(contentAlignment = Alignment.Center) {
             CircularProgressIndicator(
-                progress = animatedProgress.value,
+                progress = { animatedProgress.value },
                 modifier = Modifier.size(200.dp),
                 strokeWidth = 12.dp,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,

@@ -26,7 +26,7 @@ class DrainAnalyzer {
         val cpuHogs = cpuHogDetector.detect(points)
         val wakeLocks = wakeLockDetector.detect(points)
         val alarmSpams = alarmSpamDetector.detect(points)
-        val culprits = correlator.correlate(cpuHogs, wakeLocks, alarmSpams, points)
+        val culprits = correlator.correlate(cpuHogs, wakeLocks, alarmSpams)
 
         val sessionDurationMs = if (points.size > 1)
             points.last().timestampMs - points.first().timestampMs else 0L

@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.isygold.procinsight.data.MonitorInfo
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
 
@@ -62,7 +61,7 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
                 Spacer(Modifier.height(4.dp))
 
                 // Process section
-                ProcessSection(data.topCpuProcesses, data.monitorInfo)
+                ProcessSection(data.topCpuProcesses)
 
                 Spacer(Modifier.height(4.dp))
 
