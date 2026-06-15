@@ -1,8 +1,6 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,12 +9,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.isygold.procinsight.data.AlarmInfo
 import com.isygold.procinsight.data.CpuCoreInfo
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
@@ -112,15 +110,18 @@ private fun DetailedCpuCoreCard(core: CpuCoreInfo) {
 
             Spacer(Modifier.height(8.dp))
 
-            Box(
-                modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(core.usagePercent / 100f).height(10.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(barColor)
-                )
+            Box(modifier = Modifier.fillMaxWidth().height(10.dp)) {
+                Surface(
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(5.dp)),
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(5.dp)
+                ) {}
+                Surface(
+                    modifier = Modifier.fillMaxWidth(core.usagePercent / 100f).fillMaxHeight()
+                        .clip(RoundedCornerShape(5.dp)),
+                    color = barColor,
+                    shape = RoundedCornerShape(5.dp)
+                ) {}
             }
 
             Spacer(Modifier.height(8.dp))

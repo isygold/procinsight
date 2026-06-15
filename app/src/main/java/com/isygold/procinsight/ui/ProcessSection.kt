@@ -1,8 +1,6 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SensorOccupied
@@ -11,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -99,14 +96,18 @@ private fun ProcessRow(proc: ProcessInfo) {
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(1.5.dp))
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(proc.cpuPercent / 100f).height(3.dp)
-                .clip(RoundedCornerShape(1.5.dp))
-                .background(cpuColor)
-        )
+    // Progress bar
+    Box(modifier = Modifier.fillMaxWidth().height(3.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(1.5.dp)),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(1.5.dp)
+        ) {}
+        Surface(
+            modifier = Modifier.fillMaxWidth(proc.cpuPercent / 100f).fillMaxHeight()
+                .clip(RoundedCornerShape(1.5.dp)),
+            color = cpuColor,
+            shape = RoundedCornerShape(1.5.dp)
+        ) {}
     }
 }

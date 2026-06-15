@@ -1,8 +1,6 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Memory
@@ -11,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,15 +72,22 @@ private fun CpuCoreRow(core: CpuCoreInfo) {
 
         Spacer(Modifier.height(2.dp))
 
+        // Background track
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(3.dp)
+        ) {}
+        // Fill bar on top (using Box with negative offset to overlay)
         Box(
-            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth(core.usagePercent / 100f).height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(core.usagePercent / 100f).height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(barColor)
-            )
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = barColor,
+                shape = RoundedCornerShape(3.dp)
+            ) {}
         }
 
         Row(
