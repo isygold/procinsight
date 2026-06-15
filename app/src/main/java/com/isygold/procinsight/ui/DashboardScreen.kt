@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.isygold.procinsight.data.MonitorInfo
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
 
@@ -50,6 +51,9 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
                 // Header stats
                 OverviewCards(data)
 
+                // Status hints
+                StatusHint(data)
+
                 Spacer(Modifier.height(8.dp))
 
                 // CPU section
@@ -58,7 +62,7 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
                 Spacer(Modifier.height(4.dp))
 
                 // Process section
-                ProcessSection(data.topCpuProcesses)
+                ProcessSection(data.topCpuProcesses, data.monitorInfo)
 
                 Spacer(Modifier.height(4.dp))
 
@@ -71,6 +75,40 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
                 AlarmSection(data.topAlarmApps)
             }
         }
+    }
+}
+
+@Composable
+private fun StatusHint(data: SystemStats) {
+    val mi = data.monitorInfo
+    val hints = mutableListOf<Pair<String, Color>>()
+
+    if (!mi.shizukuConnected && mi.monitorMode == "basic") {
+        hints.add("💡 Shizuku needed: Install from shizuku.rikka.app, start service, grant access to ProcInsight" to Color(0xFFFFA726))
+    }
+    if (!mi.shizukuConnected && !mi.usageStatsGranted && data.topCpuProcesses.size <= 2) {
+        hints.add("💡 Grant Usage Access in Settings -> App Usage Access -> ProcInsight to see recently active apps" to Color(0xFF42A5F5))
+    }
+    if (mi.wakeLocksAvailable == false && !mi.shizukuConnected) {
+        hints.add("💡 Wake locks & alarms require Shizuku ADV mode (dumpsys needs system permissions)" to Color(0xFFAB47BC))
+    }
+    if (mi.shizukuConnected) {
+        hints.add("✅ Shizuku active: Full monitoring enabled" to Color(0xFF66BB6A))
+    }
+
+    hints.forEach { (text, color) ->
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+            colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f))
+        ) {
+            Text(
+                text = text,
+                fontSize = 11.sp,
+                color = color,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+        }
+        Spacer(Modifier.height(2.dp))
     }
 }
 

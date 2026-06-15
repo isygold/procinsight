@@ -24,18 +24,80 @@ import com.isygold.procinsight.data.SystemStats
 fun DetailedProcessScreen(stats: Resource<SystemStats>) {
     when (stats) {
         is Resource.Success -> {
+            val processes = stats.data.topCpuProcesses
+            val mi = stats.data.monitorInfo
             LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                 item {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "All Processes (${stats.data.topCpuProcesses.size})",
+                        "All Processes (${processes.size})",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
+
+                    // Show hint when limited visibility
+                    if (processes.size <= 2 && !mi.shizukuConnected) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFA726).copy(alpha = 0.12f))
+                        ) {
+                            Text(
+                                "Only your own process is visible. Android 11+ hides other processes from normal apps.\n\n" +
+                                        "To see all running processes:\n" +
+                                        "1. Install Shizuku from shizuku.rikka.app\n" +
+                                        "2. Start the Shizuku service\n" +
+                                        "3. Switch to ADVANCED mode",
+                                fontSize = 11.sp,
+                                color = Color(0xFFFFA726),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+
+                        if (!mi.usageStatsGranted) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF42A5F5).copy(alpha = 0.12f))
+                            ) {
+                                Text(
+                                    "Alternatively, grant Usage Access in Settings -> App Usage Access -> ProcInsight to see recently active apps (without PID/CPU data).",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF42A5F5),
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+
+                    if (mi.shizukuConnected) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF66BB6A).copy(alpha = 0.12f))
+                        ) {
+                            Text(
+                                "✅ Shizuku active: showing all processes",
+                                fontSize = 11.sp,
+                                color = Color(0xFF66BB6A),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    Spacer(Modifier.height(4.dp))
                 }
 
-                items(stats.data.topCpuProcesses) { proc ->
+                if (processes.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                            Text("No process data available", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                items(processes) { proc ->
                     DetailedProcessRow(proc)
                     Spacer(Modifier.height(4.dp))
                 }
@@ -69,7 +131,12 @@ private fun DetailedProcessRow(proc: com.isygold.procinsight.data.ProcessInfo) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(proc.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
-                    Text(proc.packageName, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (proc.packageName.isNotBlank()) {
+                        Text(proc.packageName, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (proc.pid < 0) {
+                        Text("(from Usage Stats — limited data)", fontSize = 10.sp, color = Color(0xFFFFA726))
+                    }
                 }
 
                 Text(
@@ -85,9 +152,9 @@ private fun DetailedProcessRow(proc: com.isygold.procinsight.data.ProcessInfo) {
 
             // Detail grid
             Row(modifier = Modifier.fillMaxWidth()) {
-                DetailItem("PID", "${proc.pid}", Modifier.weight(1f))
-                DetailItem("UID", "${proc.uid}", Modifier.weight(1f))
-                DetailItem("Threads", "${proc.threads}", Modifier.weight(1f))
+                DetailItem("PID", if (proc.pid < 0) "—" else "${proc.pid}", Modifier.weight(1f))
+                DetailItem("UID", if (proc.uid < 0) "—" else "${proc.uid}", Modifier.weight(1f))
+                DetailItem("Threads", if (proc.threads > 0) "${proc.threads}" else "—", Modifier.weight(1f))
             }
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -97,7 +164,7 @@ private fun DetailedProcessRow(proc: com.isygold.procinsight.data.ProcessInfo) {
             }
             Spacer(Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                DetailItem("RSS", "${proc.memoryRss / 1024}MB", Modifier.weight(1f))
+                DetailItem("RSS", if (proc.memoryRss > 0) "${proc.memoryRss / 1024}MB" else "—", Modifier.weight(1f))
                 DetailItem("User CPU", "${proc.userCpu}jiff", Modifier.weight(1f))
                 DetailItem("Kernel CPU", "${proc.kernelCpu}jiff", Modifier.weight(1f))
             }

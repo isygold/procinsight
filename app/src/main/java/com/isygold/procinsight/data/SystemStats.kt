@@ -6,7 +6,11 @@ data class MonitorInfo(
     val wakeLocksAvailable: Boolean = false,
     val alarmsAvailable: Boolean = false,
     val cpuAdvanced: Boolean = false,
-    val message: String = ""
+    val message: String = "",
+    val shizukuConnected: Boolean = false,
+    val shizukuMessage: String = "",
+    val usageStatsGranted: Boolean = false,
+    val usageStatsMessage: String = ""
 ) {
     companion object {
         val BASIC = MonitorInfo(monitorMode = "basic")
@@ -16,7 +20,9 @@ data class MonitorInfo(
             wakeLocksAvailable = true,
             alarmsAvailable = true,
             cpuAdvanced = true,
-            message = "Shizuku connected — full monitoring active"
+            message = "Shizuku connected — full monitoring active",
+            shizukuConnected = true,
+            shizukuMessage = "Shizuku active"
         )
     }
 }

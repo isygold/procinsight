@@ -21,6 +21,7 @@ class SystemMonitor(private val context: Context) {
     private val advancedWakeLockMonitor = AdvancedWakeLockMonitor()
     private val advancedAlarmMonitor = AdvancedAlarmMonitor()
     val shizukuManager = ShizukuManager(context)
+    val usageStatsHelper = UsageStatsHelper(context)
 
     private val _stats = MutableStateFlow<Resource<SystemStats>>(Resource.Loading())
     val stats: StateFlow<Resource<SystemStats>> = _stats
@@ -37,8 +38,23 @@ class SystemMonitor(private val context: Context) {
             _stats.value = Resource.Loading()
 
             val isAdvanced = _mode.value == MonitorMode.ADVANCED && shizukuManager.checkAvailability()
+            val shizukuState = shizukuManager.state.value
 
-            val processes = if (isAdvanced) advancedProcessMonitor.getProcesses() else processMonitor.getProcesses()
+            // Processes: advanced via Shizuku, or BASIC with UsageStats fallback
+            val processes = if (isAdvanced) {
+                advancedProcessMonitor.getProcesses()
+            } else {
+                val basicProcs = processMonitor.getProcesses()
+                if (basicProcs.size <= 2 && usageStatsHelper.isGranted()) {
+                    // Only our own process is visible; augment with UsageStats
+                    val recentApps = usageStatsHelper.getRecentProcesses()
+                    (basicProcs + recentApps).distinctBy { it.packageName }
+                        .sortedByDescending { it.cpuPercent }
+                } else {
+                    basicProcs
+                }
+            }
+
             val cpuCores = cpuMonitor.getCpuStats()
             val wakeLocks = if (isAdvanced) advancedWakeLockMonitor.getWakeLocks() else basicWakeLockMonitor.getWakeLocks()
             val alarms = if (isAdvanced) advancedAlarmMonitor.getAlarms() else basicAlarmMonitor.getAlarms()
@@ -53,6 +69,20 @@ class SystemMonitor(private val context: Context) {
             val topCpu = processes.take(10)
             val topWake = wakeLocks.take(10)
             val topAlarm = alarms.take(10)
+
+            val message = buildString {
+                if (isAdvanced) {
+                    append("Shizuku active — full monitoring")
+                } else {
+                    if (!shizukuState.available) {
+                        append("Install Shizuku & grant access for full data")
+                    }
+                    if (topCpu.size <= 2) {
+                        if (isNotEmpty()) append(". ")
+                        append("Android hides other processes without Shizuku")
+                    }
+                }
+            }
 
             _stats.value = Resource.Success(
                 SystemStats(
@@ -77,7 +107,11 @@ class SystemMonitor(private val context: Context) {
                         wakeLocksAvailable = topWake.isNotEmpty(),
                         alarmsAvailable = topAlarm.isNotEmpty(),
                         cpuAdvanced = isAdvanced,
-                        message = if (isAdvanced) "Shizuku active" else "Shizuku not connected"
+                        message = message,
+                        shizukuConnected = shizukuState.available,
+                        shizukuMessage = shizukuState.message,
+                        usageStatsGranted = usageStatsHelper.isGranted(),
+                        usageStatsMessage = if (usageStatsHelper.isGranted()) "" else "Grant Usage Access in Settings for app list"
                     )
                 )
             )

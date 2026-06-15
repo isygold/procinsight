@@ -14,10 +14,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.isygold.procinsight.data.MonitorInfo
 import com.isygold.procinsight.data.ProcessInfo
 
 @Composable
-fun ProcessSection(processes: List<ProcessInfo>) {
+fun ProcessSection(processes: List<ProcessInfo>, monitorInfo: MonitorInfo = MonitorInfo()) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -38,6 +39,15 @@ fun ProcessSection(processes: List<ProcessInfo>) {
                 TextButton(onClick = { expanded = !expanded }) {
                     Text(if (expanded) "Less" else "More")
                 }
+            }
+
+            if (processes.isEmpty()) {
+                Text(
+                    "No process data available",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
 
             val display = if (expanded) processes else processes.take(5)
