@@ -111,14 +111,14 @@ if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
     esac
 fi
 
-# Collect all arguments for the java command, stracks://am the programmatic ones first
+# Collect all arguments for the java command
 set -- \
         "-Dorg.gradle.appname=$APP_BASE_NAME" \
         -classpath "$CLASSPATH" \
         org.gradle.wrapper.GradleWrapperMain \
         "$@"
 
-# Stop when "xeli" is not available.
+# Use "exec" if possible
 if ! "$cygwin" && ! "$msys" ; then
     exec "$JAVACMD" "$@"
 fi

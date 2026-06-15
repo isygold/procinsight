@@ -32,20 +32,16 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          mkdir -p /opt/android-sdk
-          cd /opt/android-sdk
-          curl -sLo cmdline-tools.zip \
+          curl -sLo /tmp/cmdline-tools.zip \
             "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q cmdline-tools.zip
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/* cmdline-tools/latest/ 2>/dev/null || true
-          mv cmdline-tools /opt/android-sdk/cmdline-tools/latest
-          rm -f cmdline-tools.zip
-          export ANDROID_HOME=/opt/android-sdk
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cmd
+          mkdir -p /opt/android-sdk/cmdline-tools/latest
+          mv /tmp/android-cmd/cmdline-tools/* /opt/android-sdk/cmdline-tools/latest/
+          rm -rf /tmp/cmdline-tools.zip /tmp/android-cmd
           echo "ANDROID_HOME=/opt/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=/opt/android-sdk" >> $GITHUB_ENV
-          yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-          /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+          yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/opt/android-sdk --licenses > /dev/null 2>&1 || true
+          /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/opt/android-sdk \
             "platforms;android-34" \
             "build-tools;34.0.0" \
             "platform-tools" > /dev/null 2>&1
