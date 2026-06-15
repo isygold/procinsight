@@ -15,7 +15,6 @@ data class ProcessInfo(
     val nice: Int,
     val state: String,
     val foreground: Boolean,
-    val lastActivityTime: Long,
     val wakeups: Int,
     val uid: Int
 )

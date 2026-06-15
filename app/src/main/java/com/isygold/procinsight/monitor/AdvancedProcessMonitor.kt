@@ -36,7 +36,7 @@ class AdvancedProcessMonitor {
                 cpuPercent = cpuPercent, userCpu = 0, kernelCpu = 0, totalCpu = 0,
                 threads = 0, memoryRss = rssKb, memoryPss = null,
                 priority = priority, nice = nice, state = stateChar,
-                foreground = false, lastActivityTime = 0L, wakeups = 0, uid = -1
+                foreground = false, wakeups = 0, uid = -1
             ))
         }
 

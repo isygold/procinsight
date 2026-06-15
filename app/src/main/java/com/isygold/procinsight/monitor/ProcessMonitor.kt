@@ -35,7 +35,7 @@ class ProcessMonitor(private val context: Context? = null) {
                 cpuPercent = 0f, userCpu = 0, kernelCpu = 0, totalCpu = 0,
                 threads = threads, memoryRss = rssKb, memoryPss = null,
                 priority = priority, nice = nice, state = state,
-                foreground = true, lastActivityTime = 0L, wakeups = 0, uid = uid
+                foreground = true, wakeups = 0, uid = uid
             ))
         } catch (_: Exception) { }
 
@@ -52,7 +52,7 @@ class ProcessMonitor(private val context: Context? = null) {
                     priority = 0, nice = 0,
                     state = if (app.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) "R" else "S",
                     foreground = app.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE,
-                    lastActivityTime = app.lastActivityTime, wakeups = 0, uid = app.uid
+                    wakeups = 0, uid = app.uid
                 ))
             }
         } catch (_: Exception) { }
