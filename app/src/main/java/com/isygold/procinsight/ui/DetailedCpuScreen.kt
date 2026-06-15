@@ -25,7 +25,18 @@ fun DetailedCpuScreen(stats: Resource<SystemStats>) {
     when (stats) {
         is Resource.Success -> {
             val cores = stats.data.perCore
-            val totalAvg = cores.map { it.usagePercent }.average().toFloat()
+            val totalAvg = if (cores.isNotEmpty()) cores.map { it.usagePercent }.average().toFloat() else 0f
+
+            if (cores.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("CPU stats unavailable — /proc/stat may be blocked on this device",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(32.dp))
+                }
+                return
+            }
 
             LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                 item {
