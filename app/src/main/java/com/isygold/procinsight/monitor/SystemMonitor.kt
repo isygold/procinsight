@@ -9,24 +9,39 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 
+enum class MonitorMode { BASIC, ADVANCED }
+
 class SystemMonitor(private val context: Context) {
 
-    private val processMonitor = ProcessMonitor()
+    private val processMonitor = ProcessMonitor(context)
     private val cpuMonitor = CpuMonitor()
-    private val wakeLockMonitor = WakeLockMonitor()
-    private val alarmMonitor = AlarmMonitor()
+    private val basicWakeLockMonitor = WakeLockMonitor()
+    private val basicAlarmMonitor = AlarmMonitor()
+    private val advancedProcessMonitor = AdvancedProcessMonitor()
+    private val advancedWakeLockMonitor = AdvancedWakeLockMonitor()
+    private val advancedAlarmMonitor = AdvancedAlarmMonitor()
+    val shizukuManager = ShizukuManager(context)
 
     private val _stats = MutableStateFlow<Resource<SystemStats>>(Resource.Loading())
     val stats: StateFlow<Resource<SystemStats>> = _stats
+
+    private val _mode = MutableStateFlow(MonitorMode.BASIC)
+    val mode: StateFlow<MonitorMode> = _mode
+
+    fun setMode(newMode: MonitorMode) {
+        _mode.value = newMode
+    }
 
     suspend fun refresh() {
         try {
             _stats.value = Resource.Loading()
 
-            val processes = processMonitor.getProcesses()
+            val isAdvanced = _mode.value == MonitorMode.ADVANCED && shizukuManager.checkAvailability()
+
+            val processes = if (isAdvanced) advancedProcessMonitor.getProcesses() else processMonitor.getProcesses()
             val cpuCores = cpuMonitor.getCpuStats()
-            val wakeLocks = wakeLockMonitor.getWakeLocks()
-            val alarms = alarmMonitor.getAlarms()
+            val wakeLocks = if (isAdvanced) advancedWakeLockMonitor.getWakeLocks() else basicWakeLockMonitor.getWakeLocks()
+            val alarms = if (isAdvanced) advancedAlarmMonitor.getAlarms() else basicAlarmMonitor.getAlarms()
 
             val memInfo = readMemInfo()
             val batteryInfo = getBatteryInfo()
@@ -34,7 +49,7 @@ class SystemMonitor(private val context: Context) {
             val allPids = processCount()
             val allThreads = processes.sumOf { it.threads }
 
-            val totalCpu = cpuCores.map { it.usagePercent }.average().toFloat()
+            val totalCpu = if (cpuCores.isNotEmpty()) cpuCores.map { it.usagePercent }.average().toFloat() else 0f
             val topCpu = processes.take(10)
             val topWake = wakeLocks.take(10)
             val topAlarm = alarms.take(10)
@@ -57,9 +72,12 @@ class SystemMonitor(private val context: Context) {
                     topWakeLockApps = topWake,
                     topAlarmApps = topAlarm,
                     monitorInfo = MonitorInfo(
-                        processesAvailable = topCpu.isNotEmpty(),
+                        monitorMode = if (isAdvanced) "advanced" else "basic",
+                        processesAvailable = topCpu.isNotEmpty() || isAdvanced,
                         wakeLocksAvailable = topWake.isNotEmpty(),
-                        alarmsAvailable = topAlarm.isNotEmpty()
+                        alarmsAvailable = topAlarm.isNotEmpty(),
+                        cpuAdvanced = isAdvanced,
+                        message = if (isAdvanced) "Shizuku active" else "Shizuku not connected"
                     )
                 )
             )
@@ -77,7 +95,6 @@ class SystemMonitor(private val context: Context) {
             val freeKb = lines.firstOrNull { it.startsWith("MemFree:") }?.split("\\s+".toRegex())?.getOrNull(1)?.toLongOrNull() ?: 0L
             val buffersKb = lines.firstOrNull { it.startsWith("Buffers:") }?.split("\\s+".toRegex())?.getOrNull(1)?.toLongOrNull() ?: 0L
             val cachedKb = lines.firstOrNull { it.startsWith("Cached:") }?.split("\\s+".toRegex())?.getOrNull(1)?.toLongOrNull() ?: 0L
-
             val usedKb = totalKb - freeKb - buffersKb - cachedKb
             MemInfo(totalKb / 1024, freeKb / 1024, usedKb / 1024)
         } catch (_: Exception) { MemInfo(0, 0, 0) }
@@ -105,5 +122,4 @@ class SystemMonitor(private val context: Context) {
             File("/proc").listFiles { f -> f.isDirectory && f.name.all { it.isDigit() } }?.size ?: 0
         } catch (_: Exception) { 0 }
     }
-
 }
