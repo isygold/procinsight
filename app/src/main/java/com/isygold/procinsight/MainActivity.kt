@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.isygold.procinsight.detective.diagnosis.DrainDiagnosis
+import com.isygold.procinsight.detective.session.ProfilingSession
+import com.isygold.procinsight.detective.ui.DetectiveScreen
+import com.isygold.procinsight.detective.ui.DiagnosisResultScreen
 import com.isygold.procinsight.monitor.MainViewModel
 import com.isygold.procinsight.service.MonitorService
 import com.isygold.procinsight.ui.DashboardScreen
@@ -39,6 +43,8 @@ class MainActivity : ComponentActivity() {
             permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        val profilingSession = ProfilingSession(this)
+
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -57,13 +63,16 @@ class MainActivity : ComponentActivity() {
                 val isMonitoring by viewModel.isMonitoring.collectAsState()
                 var selectedTab by remember { mutableStateOf(0) }
                 var searchQuery by remember { mutableStateOf("") }
+                var diagnosis by remember { mutableStateOf<DrainDiagnosis?>(null) }
 
                 LaunchedEffect(Unit) {
                     viewModel.startMonitoring(2000)
                 }
 
                 DisposableEffect(Unit) {
-                    onDispose { viewModel.stopMonitoring() }
+                    onDispose {
+                        viewModel.stopMonitoring()
+                    }
                 }
 
                 Scaffold(
@@ -138,6 +147,15 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.Bedtime, contentDescription = null) },
                                 label = { Text("Wakeups", fontSize = 11.sp) }
                             )
+                            NavigationBarItem(
+                                selected = selectedTab == 4,
+                                onClick = {
+                                    selectedTab = 4
+                                    diagnosis = null
+                                },
+                                icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                label = { Text("Detective", fontSize = 11.sp) }
+                            )
                         }
                     }
                 ) { padding ->
@@ -147,6 +165,29 @@ class MainActivity : ComponentActivity() {
                             1 -> DetailedCpuScreen(stats)
                             2 -> DetailedProcessScreen(stats, searchQuery)
                             3 -> DetailedWakeupScreen(stats)
+                            4 -> {
+                                if (diagnosis != null) {
+                                    DiagnosisResultScreen(
+                                        diagnosis = diagnosis!!,
+                                        onRestart = {
+                                            profilingSession.reset()
+                                            diagnosis = null
+                                        },
+                                        onDone = {
+                                            profilingSession.reset()
+                                            diagnosis = null
+                                            selectedTab = 0
+                                        }
+                                    )
+                                } else {
+                                    DetectiveScreen(
+                                        profilingSession = profilingSession,
+                                        onDiagnosisReady = { result ->
+                                            diagnosis = result
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
