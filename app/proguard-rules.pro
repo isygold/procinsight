@@ -1,0 +1,2 @@
+-dontwarn com.isygold.procinsight.**
+-keepclassmembers class com.isygold.procinsight.** { *; }

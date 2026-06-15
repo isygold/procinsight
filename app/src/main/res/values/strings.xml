@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ProcInsight</string>
+    <string name="channel_name">ProcInsight Monitor</string>
+    <string name="channel_desc">Background process monitoring service</string>
+</resources>

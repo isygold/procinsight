@@ -1,0 +1,146 @@
+package com.isygold.procinsight.ui
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.isygold.procinsight.data.CpuCoreInfo
+import com.isygold.procinsight.data.Resource
+import com.isygold.procinsight.data.SystemStats
+
+@Composable
+fun DetailedCpuScreen(stats: Resource<SystemStats>) {
+    when (stats) {
+        is Resource.Success -> {
+            val cores = stats.data.perCore
+            val totalAvg = cores.map { it.usagePercent }.average().toFloat()
+
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+                item {
+                    Spacer(Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Total CPU Usage", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "${"%.1f".format(totalAvg)}%",
+                                fontSize = 42.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                color = when {
+                                    totalAvg > 80 -> Color(0xFFFF5252)
+                                    totalAvg > 50 -> Color(0xFFFFA726)
+                                    else -> Color(0xFF66BB6A)
+                                }
+                            )
+                            Text(
+                                "${stats.data.processes} processes · ${stats.data.threads} threads",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text("Per-Core Breakdown", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                items(cores) { core ->
+                    DetailedCpuCoreCard(core)
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+        }
+        else -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailedCpuCoreCard(core: CpuCoreInfo) {
+    val barColor = when {
+        core.usagePercent > 80 -> Color(0xFFFF5252)
+        core.usagePercent > 50 -> Color(0xFFFFA726)
+        else -> Color(0xFF66BB6A)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("CPU${core.core}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    if (!core.online) {
+                        Spacer(Modifier.width(8.dp))
+                        Text("OFFLINE", fontSize = 10.sp, color = Color(0xFFFF5252))
+                    }
+                }
+                Text(
+                    "${"%.1f".format(core.usagePercent)}%",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    color = barColor
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(core.usagePercent / 100f).height(10.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(barColor)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                DetailItem("Freq", "${core.frequencyKhz / 1000} MHz", Modifier.weight(1f))
+                DetailItem("Min", "${core.minFreq / 1000} MHz", Modifier.weight(1f))
+                DetailItem("Max", "${core.maxFreq / 1000} MHz", Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                DetailItem("Governor", core.governor, Modifier.weight(1f))
+                DetailItem("Idle", "${core.idle}jiff", Modifier.weight(1f))
+                DetailItem("Active", "${core.active}jiff", Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                DetailItem("User", "${core.user}jiff", Modifier.weight(1f))
+                DetailItem("System", "${core.system}jiff", Modifier.weight(1f))
+                DetailItem("I/O Wait", "${core.iowait}jiff", Modifier.weight(1f))
+            }
+        }
+    }
+}
