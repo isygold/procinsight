@@ -65,7 +65,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    implementation("moe.shizuku.api:api:13.1.5")
+    implementation("moe.shizuku:api:13.1.4")
+    implementation("moe.shizuku:provider:13.1.4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
