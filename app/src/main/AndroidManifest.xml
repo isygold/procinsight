@@ -40,7 +40,7 @@
             android:exported="false" />
 
         <provider
-            android:name="moe.shizuku.api.ShizukuProvider"
+            android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
             android:enabled="true"
             android:exported="true"

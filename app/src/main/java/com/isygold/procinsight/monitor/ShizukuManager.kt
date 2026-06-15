@@ -14,29 +14,38 @@ class ShizukuManager(private val context: Context) {
     val statusMessage: StateFlow<String> = _statusMessage.asStateFlow()
 
     fun checkAvailability(): Boolean {
-        return try {
-            val clazz = Class.forName("moe.shizuku.api.Shizuku")
-            val method = clazz.getMethod("ping")
-            val result = method.invoke(null) as? Boolean ?: false
-            _isAvailable.value = result
-            if (result) _statusMessage.value = "Shizuku connected"
-            result
-        } catch (_: Exception) {
-            _isAvailable.value = false
-            _statusMessage.value = "Shizuku not installed or API unavailable"
-            false
+        for (className in listOf("rikka.shizuku.Shizuku", "moe.shizuku.api.Shizuku")) {
+            try {
+                val clazz = Class.forName(className)
+                val method = clazz.getMethod("ping")
+                val result = method.invoke(null)
+                val available = when (result) {
+                    is Int -> result > 0
+                    is Boolean -> result
+                    else -> false
+                }
+                if (available) {
+                    _isAvailable.value = true
+                    _statusMessage.value = "Shizuku connected"
+                    return true
+                }
+            } catch (_: Exception) { }
         }
+        _isAvailable.value = false
+        _statusMessage.value = "Shizuku not installed or API unavailable"
+        return false
     }
 
     companion object {
         fun getShellCommand(vararg cmd: String): Process? {
-            return try {
-                val clazz = Class.forName("moe.shizuku.api.Shizuku")
-                val method = clazz.getMethod("newProcess", Array<String>::class.java)
-                method.invoke(null, arrayOf<Any?>(cmd)) as? Process
-            } catch (_: Exception) {
-                null
+            for (className in listOf("rikka.shizuku.Shizuku", "moe.shizuku.api.Shizuku")) {
+                try {
+                    val clazz = Class.forName(className)
+                    val method = clazz.getMethod("newProcess", Array<String>::class.java)
+                    return method.invoke(null, arrayOf<Any?>(cmd)) as? Process
+                } catch (_: Exception) { }
             }
+            return null
         }
 
         fun execute(cmd: String): String? {
