@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,13 +22,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.isygold.procinsight.monitor.MainViewModel
 import com.isygold.procinsight.service.MonitorService
 import com.isygold.procinsight.ui.DashboardScreen
+import com.isygold.procinsight.ui.DetailedCpuScreen
 import com.isygold.procinsight.ui.DetailedProcessScreen
+import com.isygold.procinsight.ui.DetailedWakeupScreen
 import com.isygold.procinsight.data.Resource
 
 class MainActivity : ComponentActivity() {
 
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
 
         setContent {
             MaterialTheme(
@@ -50,12 +60,6 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(Unit) {
                     viewModel.startMonitoring(2000)
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        requestPermission(
-                            android.Manifest.permission.POST_NOTIFICATIONS
-                        )
-                    }
                 }
 
                 DisposableEffect(Unit) {
@@ -64,6 +68,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = {
+                        @OptIn(ExperimentalMaterial3Api::class)
                         TopAppBar(
                             title = {
                                 Row {

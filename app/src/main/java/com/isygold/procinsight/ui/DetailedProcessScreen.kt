@@ -115,7 +115,7 @@ private fun DetailedProcessRow(proc: com.isygold.procinsight.data.ProcessInfo) {
 }
 
 @Composable
-private fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
+fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(label, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
