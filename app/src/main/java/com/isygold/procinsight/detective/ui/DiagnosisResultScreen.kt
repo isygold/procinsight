@@ -1,9 +1,6 @@
 package com.isygold.procinsight.detective.ui
 
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.os.Process
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -249,16 +246,6 @@ private fun FixStepCard(
 
 private fun forceStopPackage(context: Context, packageName: String) {
     try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-            am?.forceStopPackage(packageName)
-        } else {
-            // Fallback: use kill background processes
-            Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
-        }
-    } catch (_: Exception) {
-        try {
-            Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
-        } catch (_: Exception) { }
-    }
+        Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
+    } catch (_: Exception) { }
 }

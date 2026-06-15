@@ -1,6 +1,8 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,7 +16,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.isygold.procinsight.data.AlarmInfo
 import com.isygold.procinsight.data.CpuCoreInfo
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
