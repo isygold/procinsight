@@ -14,23 +14,60 @@ class CpuMonitor {
         val total: Long, val idle: Long
     )
 
+    /**
+     * Try to read /proc/stat using every available method.
+     * Returns parsed lines on success, empty list on total failure.
+     */
+    private fun readProcStat(): List<String> {
+        // Layer 1: direct File read
+        try {
+            val lines = File("/proc/stat").readLines()
+            if (lines.isNotEmpty()) {
+                val cpuLines = lines.filter { it.startsWith("cpu") && it.length > 3 }
+                if (cpuLines.isNotEmpty()) return cpuLines
+            }
+        } catch (_: Exception) { }
+
+        // Layer 2: Runtime.exec("cat /proc/stat") — works on some MIUI where direct File fails
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("cat", "/proc/stat"))
+            val text = proc.inputStream.bufferedReader().readText()
+            proc.waitFor()
+            if (text.isNotEmpty()) {
+                val cpuLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
+                if (cpuLines.isNotEmpty()) return cpuLines
+            }
+        } catch (_: Exception) { }
+
+        // Layer 3: Runtime.exec with "sh" to handle SELinux context differences
+        try {
+            val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "cat /proc/stat"))
+            val text = proc.inputStream.bufferedReader().readText()
+            proc.waitFor()
+            if (text.isNotEmpty()) {
+                val cpuLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
+                if (cpuLines.isNotEmpty()) return cpuLines
+            }
+        } catch (_: Exception) { }
+
+        // Layer 4: try via Shizuku if available
+        try {
+            val result = ShizukuManager.execute("cat /proc/stat")
+            if (result != null && result.isNotEmpty()) {
+                val cpuLines = result.lines().filter { it.startsWith("cpu") && it.length > 3 }
+                if (cpuLines.isNotEmpty()) return cpuLines
+            }
+        } catch (_: Exception) { }
+
+        return emptyList()
+    }
+
     suspend fun getCpuStats(): List<CpuCoreInfo> = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         val cores = mutableListOf<CpuCoreInfo>()
         val cpuDir = File("/sys/devices/system/cpu")
 
-        // Read per-core lines from /proc/stat
-        var statLines: List<String> = emptyList()
-        try {
-            statLines = File("/proc/stat").readLines().filter { it.startsWith("cpu") && it.length > 3 }
-        } catch (_: Exception) {
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("cat", "/proc/stat"))
-                val text = proc.inputStream.bufferedReader().readText()
-                proc.waitFor()
-                statLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
-            } catch (_: Exception) { }
-        }
+        val statLines = readProcStat()
 
         if (statLines.isNotEmpty()) {
             for (line in statLines) {
@@ -83,9 +120,10 @@ class CpuMonitor {
                     )
                 } catch (_: Exception) { }
             }
-        } else {
-            // Fallback: /proc/stat not readable (SELinux block on MIUI).
-            // Count CPU cores from sysfs and return zero-filled entries.
+        }
+
+        if (cores.isEmpty()) {
+            // Total fallback: count cores from sysfs, 0% usage
             val coreCount = countCpuCores(cpuDir)
             for (i in 0 until coreCount) {
                 val cpuPath = "$cpuDir/cpu$i"
@@ -116,12 +154,10 @@ class CpuMonitor {
     }
 
     private fun countCpuCores(cpuDir: File): Int {
-        // Try /sys/devices/system/cpu/present first
         val present = try {
             File(cpuDir, "present").readText().trim()
         } catch (_: Exception) { null }
         if (present != null) {
-            // Format: "0-7"
             val parts = present.split("-")
             if (parts.size == 2) {
                 val start = parts[0].toIntOrNull()
@@ -129,8 +165,6 @@ class CpuMonitor {
                 if (start != null && end != null) return end - start + 1
             }
         }
-
-        // Count cpuN directories as fallback
         return try {
             cpuDir.listFiles { f -> f.isDirectory && f.name.startsWith("cpu") && f.name.length > 3 && f.name[3].isDigit() }?.size ?: 4
         } catch (_: Exception) { 4 }

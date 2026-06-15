@@ -82,8 +82,11 @@ private fun StatusHint(data: SystemStats) {
     val mi = data.monitorInfo
     val hints = mutableListOf<Pair<String, Color>>()
 
+    if (mi.shizukuConnected && !mi.shizukuAuthorized) {
+        hints.add("⚠️ Shizuku connected but NOT authorized — Open Shizuku app and tap the switch next to ProcInsight to grant permission" to Color(0xFFFF5252))
+    }
     if (!mi.shizukuConnected && mi.monitorMode == "basic") {
-        hints.add("💡 Shizuku needed: Install from shizuku.rikka.app, start service, grant access to ProcInsight" to Color(0xFFFFA726))
+        hints.add("💡 Shizuku needed: Install from shizuku.rikka.app, start service, then grant authorization to ProcInsight" to Color(0xFFFFA726))
     }
     if (!mi.shizukuConnected && !mi.usageStatsGranted && data.topCpuProcesses.size <= 2) {
         hints.add("💡 Grant Usage Access in Settings -> App Usage Access -> ProcInsight to see recently active apps" to Color(0xFF42A5F5))
@@ -91,8 +94,13 @@ private fun StatusHint(data: SystemStats) {
     if (mi.wakeLocksAvailable == false && !mi.shizukuConnected) {
         hints.add("💡 Wake locks & alarms require Shizuku ADV mode (dumpsys needs system permissions)" to Color(0xFFAB47BC))
     }
-    if (mi.shizukuConnected) {
+    if (mi.shizukuConnected && mi.shizukuAuthorized) {
         hints.add("✅ Shizuku active: Full monitoring enabled" to Color(0xFF66BB6A))
+        if (mi.shizukuMessage.startsWith("OK.")) {
+            hints.add("Shizuku execution: ${mi.shizukuMessage}" to Color(0xFF66BB6A))
+        } else if (mi.shizukuMessage.isNotEmpty()) {
+            hints.add("Shizuku execution: ${mi.shizukuMessage}" to Color(0xFFFF5252))
+        }
     }
 
     hints.forEach { (text, color) ->

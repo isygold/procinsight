@@ -8,6 +8,7 @@ data class MonitorInfo(
     val cpuAdvanced: Boolean = false,
     val message: String = "",
     val shizukuConnected: Boolean = false,
+    val shizukuAuthorized: Boolean = false,
     val shizukuMessage: String = "",
     val usageStatsGranted: Boolean = false,
     val usageStatsMessage: String = ""

@@ -70,12 +70,19 @@ class SystemMonitor(private val context: Context) {
             val topWake = wakeLocks.take(10)
             val topAlarm = alarms.take(10)
 
+            // Run a test command to detect Shizuku execution issues
+            val shizukuTestResult = if (shizukuState.available && shizukuState.authorized) {
+                shizukuManager.testExecution()
+            } else ""
+
             val message = buildString {
-                if (isAdvanced) {
+                if (shizukuState.available && shizukuState.authorized) {
                     append("Shizuku active — full monitoring")
+                } else if (shizukuState.available && !shizukuState.authorized) {
+                    append("Shizuku connected — OPEN Shizuku app and GRANT authorization to ProcInsight")
                 } else {
                     if (!shizukuState.available) {
-                        append("Install Shizuku & grant access for full data")
+                        append("Install & start Shizuku for full monitoring")
                     }
                     if (topCpu.size <= 2) {
                         if (isNotEmpty()) append(". ")
@@ -109,7 +116,9 @@ class SystemMonitor(private val context: Context) {
                         cpuAdvanced = isAdvanced,
                         message = message,
                         shizukuConnected = shizukuState.available,
-                        shizukuMessage = shizukuState.message,
+                        shizukuAuthorized = shizukuState.authorized,
+                        shizukuMessage = if (shizukuTestResult.isNotEmpty()) shizukuTestResult
+                            else shizukuState.detail.ifEmpty { shizukuState.message },
                         usageStatsGranted = usageStatsHelper.isGranted(),
                         usageStatsMessage = if (usageStatsHelper.isGranted()) "" else "Grant Usage Access in Settings for app list"
                     )
