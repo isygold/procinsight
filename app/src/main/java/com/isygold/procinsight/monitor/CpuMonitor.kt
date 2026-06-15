@@ -20,9 +20,17 @@ class CpuMonitor {
         val cpuDir = File("/sys/devices/system/cpu")
 
         // Read per-core lines from /proc/stat
-        val statLines = try {
-            File("/proc/stat").readLines().filter { it.startsWith("cpu") && it.length > 3 }
-        } catch (_: Exception) { emptyList() }
+        var statLines: List<String> = emptyList()
+        try {
+            statLines = File("/proc/stat").readLines().filter { it.startsWith("cpu") && it.length > 3 }
+        } catch (_: Exception) {
+            try {
+                val proc = Runtime.getRuntime().exec(arrayOf("cat", "/proc/stat"))
+                val text = proc.inputStream.bufferedReader().readText()
+                proc.waitFor()
+                statLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
+            } catch (_: Exception) { }
+        }
 
         if (statLines.isNotEmpty()) {
             for (line in statLines) {

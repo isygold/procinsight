@@ -16,23 +16,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.isygold.procinsight.data.AlarmInfo
-import com.isygold.procinsight.data.CpuCoreInfo
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailedProcessScreen(stats: Resource<SystemStats>, searchQuery: String) {
+fun DetailedProcessScreen(stats: Resource<SystemStats>) {
     when (stats) {
         is Resource.Success -> {
-            val query = searchQuery.lowercase()
-            val filtered = stats.data.topCpuProcesses.filter {
-                query.isBlank() || it.name.lowercase().contains(query) ||
-                it.packageName.lowercase().contains(query) ||
-                it.pid.toString() == query
-            }
-
             LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                 item {
                     Spacer(Modifier.height(8.dp))
@@ -44,7 +35,7 @@ fun DetailedProcessScreen(stats: Resource<SystemStats>, searchQuery: String) {
                     Spacer(Modifier.height(8.dp))
                 }
 
-                items(filtered) { proc ->
+                items(stats.data.topCpuProcesses) { proc ->
                     DetailedProcessRow(proc)
                     Spacer(Modifier.height(4.dp))
                 }

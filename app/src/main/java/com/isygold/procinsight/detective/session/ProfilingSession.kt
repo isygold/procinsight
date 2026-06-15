@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Takes snapshots every [intervalMs] for [durationMs] and stores them for analysis.
  */
-class ProfilingSession(private val context: Context) {
+class ProfilingSession(
+    private val context: Context,
+    private val scope: kotlinx.coroutines.CoroutineScope? = null
+) {
 
     companion object {
         const val DEFAULT_DURATION_MS = 15 * 60 * 1000L   // 15 minutes
@@ -43,7 +46,8 @@ class ProfilingSession(private val context: Context) {
 
         val startTime = System.currentTimeMillis()
 
-        sessionJob = CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+        val targetScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
+        sessionJob = targetScope.launch {
             while (isActive && (System.currentTimeMillis() - startTime) < durationMs) {
                 monitor.refresh()
                 val stats = monitor.stats.value

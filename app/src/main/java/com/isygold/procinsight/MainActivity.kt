@@ -31,6 +31,9 @@ import com.isygold.procinsight.ui.DetailedCpuScreen
 import com.isygold.procinsight.ui.DetailedProcessScreen
 import com.isygold.procinsight.ui.DetailedWakeupScreen
 import com.isygold.procinsight.data.Resource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class MainActivity : ComponentActivity() {
 
@@ -44,7 +47,7 @@ class MainActivity : ComponentActivity() {
             permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        val profilingSession = ProfilingSession(this)
+        val profilingSession = ProfilingSession(this, CoroutineScope(Dispatchers.IO + SupervisorJob()))
 
         setContent {
             MaterialTheme(
@@ -65,7 +68,6 @@ class MainActivity : ComponentActivity() {
                 val monitorMode by viewModel.mode.collectAsState()
                 val shizukuAvailable by viewModel.shizukuAvailable.collectAsState()
                 var selectedTab by remember { mutableStateOf(0) }
-                var searchQuery by remember { mutableStateOf("") }
                 var diagnosis by remember { mutableStateOf<DrainDiagnosis?>(null) }
 
                 LaunchedEffect(Unit) {
@@ -174,7 +176,7 @@ class MainActivity : ComponentActivity() {
                         when (selectedTab) {
                             0 -> DashboardScreen(stats)
                             1 -> DetailedCpuScreen(stats)
-                            2 -> DetailedProcessScreen(stats, searchQuery)
+                            2 -> DetailedProcessScreen(stats)
                             3 -> DetailedWakeupScreen(stats)
                             4 -> {
                                 if (diagnosis != null) {
