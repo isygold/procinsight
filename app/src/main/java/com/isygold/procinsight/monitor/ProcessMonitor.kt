@@ -25,6 +25,12 @@ class ProcessMonitor(private val context: Context? = null) {
     private val prevCpuTicks = mutableMapOf<Int, Long>()
     private var lastPollTime = 0L
 
+    // Diagnostics counters
+    var lastEnumeratedCount = 0
+        private set
+    var lastReadSuccessCount = 0
+        private set
+
     private fun parseStat(text: String): StatFields? {
         return try {
             val firstParen = text.indexOf('(')
@@ -116,8 +122,8 @@ class ProcessMonitor(private val context: Context? = null) {
 
             val totalCpu = (fields?.utime ?: 0L) + (fields?.stime ?: 0L)
             val prevTicks = prevCpuTicks[ourPid] ?: 0L
-            val cpuPercent = if (prevTicks > 0 && elapsedSec > 0) {
-                ((totalCpu - prevTicks).toFloat() / elapsedSec / 100f).coerceIn(0f, 100f)
+            val cpuPercent = if (prevTicks > 0) {
+                ((totalCpu - prevTicks).toFloat() / elapsedSec).coerceIn(0f, 100f)
             } else 0f
             prevCpuTicks[ourPid] = totalCpu
 
@@ -145,8 +151,8 @@ class ProcessMonitor(private val context: Context? = null) {
 
                 val totalCpu = fields.utime + fields.stime
                 val prevTicks = prevCpuTicks[pid] ?: 0L
-                val cpuPercent = if (prevTicks > 0 && elapsedSec > 0) {
-                    ((totalCpu - prevTicks).toFloat() / elapsedSec / 100f).coerceIn(0f, 100f)
+                val cpuPercent = if (prevTicks > 0) {
+                    ((totalCpu - prevTicks).toFloat() / elapsedSec).coerceIn(0f, 100f)
                 } else 0f
                 prevCpuTicks[pid] = totalCpu
 
@@ -202,6 +208,8 @@ class ProcessMonitor(private val context: Context? = null) {
         } catch (_: Exception) { }
 
         lastPollTime = now
+        lastEnumeratedCount = allPids.size
+        lastReadSuccessCount = processes.size
         processes.sortedByDescending { it.cpuPercent }
     }
 }

@@ -8,11 +8,18 @@ import java.io.File
 class CpuMonitor {
 
     private val snapshots = mutableMapOf<Int, PreviousCoreStat>()
-    private var lastTime = 0L
 
     private data class PreviousCoreStat(
         val total: Long, val idle: Long
     )
+
+    // ── Diagnostics (public read‑only for UI) ──
+    var detectionSource: String = "none"
+        private set
+    var rawCpuLineCount: Int = 0
+        private set
+    var rawProcStatSample: String = ""
+        private set
 
     /**
      * Try to read /proc/stat using every available method.
@@ -21,21 +28,31 @@ class CpuMonitor {
     private fun readProcStat(): List<String> {
         // Layer 1: direct File read
         try {
-            val lines = File("/proc/stat").readLines()
-            if (lines.isNotEmpty()) {
-                val cpuLines = lines.filter { it.startsWith("cpu") && it.length > 3 }
-                if (cpuLines.isNotEmpty()) return cpuLines
+            val allLines = File("/proc/stat").readLines()
+            if (allLines.isNotEmpty()) {
+                val cpuLines = allLines.filter { it.startsWith("cpu") && it.length > 3 }
+                if (cpuLines.isNotEmpty()) {
+                    detectionSource = "direct"
+                    rawCpuLineCount = cpuLines.size
+                    rawProcStatSample = cpuLines.take(4).joinToString("\n")
+                    return cpuLines
+                }
             }
         } catch (_: Exception) { }
 
-        // Layer 2: Runtime.exec("cat /proc/stat") — works on some MIUI where direct File fails
+        // Layer 2: Runtime.exec("cat /proc/stat")
         try {
             val proc = Runtime.getRuntime().exec(arrayOf("cat", "/proc/stat"))
             val text = proc.inputStream.bufferedReader().readText()
             proc.waitFor()
             if (text.isNotEmpty()) {
                 val cpuLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
-                if (cpuLines.isNotEmpty()) return cpuLines
+                if (cpuLines.isNotEmpty()) {
+                    detectionSource = "cat_exec"
+                    rawCpuLineCount = cpuLines.size
+                    rawProcStatSample = cpuLines.take(4).joinToString("\n")
+                    return cpuLines
+                }
             }
         } catch (_: Exception) { }
 
@@ -46,15 +63,20 @@ class CpuMonitor {
             proc.waitFor()
             if (text.isNotEmpty()) {
                 val cpuLines = text.lines().filter { it.startsWith("cpu") && it.length > 3 }
-                if (cpuLines.isNotEmpty()) return cpuLines
+                if (cpuLines.isNotEmpty()) {
+                    detectionSource = "sh_exec"
+                    rawCpuLineCount = cpuLines.size
+                    rawProcStatSample = cpuLines.take(4).joinToString("\n")
+                    return cpuLines
+                }
             }
         } catch (_: Exception) { }
 
+        detectionSource = "sysfs_only"
         return emptyList()
     }
 
     suspend fun getCpuStats(): List<CpuCoreInfo> = withContext(Dispatchers.IO) {
-        val now = System.currentTimeMillis()
         val cores = mutableListOf<CpuCoreInfo>()
         val cpuDir = File("/sys/devices/system/cpu")
 
@@ -140,7 +162,6 @@ class CpuMonitor {
             }
         }
 
-        lastTime = now
         cores.sortedBy { it.core }
     }
 

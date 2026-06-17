@@ -84,6 +84,16 @@ class SystemMonitor(private val context: Context) {
                         usageStatsGranted = usageStatsHelper.isGranted(),
                         usageStatsMessage = if (usageStatsHelper.isGranted()) ""
                             else "Grant Usage Access in Settings for app activity list"
+                    ),
+                    diagnostics = MonitorDiagnostics(
+                        procStatSource = cpuMonitor.detectionSource,
+                        procStatCoreCount = cpuMonitor.rawCpuLineCount,
+                        procStatSample = cpuMonitor.rawProcStatSample,
+                        processesEnumerated = processMonitor.lastEnumeratedCount,
+                        processesReadSuccess = processMonitor.lastReadSuccessCount,
+                        procWakelockAccessible = false,
+                        logcatAccessible = false,
+                        pollIntervalMs = 2000
                     )
                 )
             )
