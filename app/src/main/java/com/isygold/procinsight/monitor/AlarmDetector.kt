@@ -62,7 +62,7 @@ class AlarmDetector(private val context: Context) {
                         } else 0L,
                         operation = cls.substringAfterLast('.'),
                         isExact = false,
-                        isWhileIdle = job.isRequiresDeviceIdle() || job.isRequiresCharging()
+                        isWhileIdle = job.safeIsRequiresDeviceIdle()
                     )
                 } catch (_: Exception) { null }
             }
@@ -89,5 +89,17 @@ class AlarmDetector(private val context: Context) {
                 )
             )
         } catch (_: Exception) { emptyList() }
+    }
+
+    /**
+     * Reflection-based access to JobInfo.isRequiresDeviceIdle() and
+     * isRequiresCharging(). These methods are public API since API 23/21
+     * but may not resolve in all compile SDK configurations.
+     */
+    private fun android.app.job.JobInfo.safeIsRequiresDeviceIdle(): Boolean {
+        return try {
+            javaClass.getMethod("isRequiresDeviceIdle").invoke(this) as Boolean ||
+            javaClass.getMethod("isRequiresCharging").invoke(this) as Boolean
+        } catch (_: Exception) { false }
     }
 }
