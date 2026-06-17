@@ -13,19 +13,23 @@ class SystemMonitor(private val context: Context) {
 
     private val processMonitor = ProcessMonitor(context)
     private val cpuMonitor = CpuMonitor()
-    private val wakeLockMonitor = WakeLockMonitor()
-    private val alarmMonitor = AlarmMonitor()
     val usageStatsHelper = UsageStatsHelper(context)
+    val batteryState = BatteryStateTracker(context)
+    private val wakeLockDetector = WakeLockDetector(context, batteryState)
 
     private val _stats = MutableStateFlow<Resource<SystemStats>>(Resource.Loading())
     val stats: StateFlow<Resource<SystemStats>> = _stats
 
+    init {
+        batteryState.start()
+    }
+
     suspend fun refresh() {
         try {
             _stats.value = Resource.Loading()
+            batteryState.updateDeviceIdle()
 
-            // Processes: try /proc/[pid]/stat for all PIDs,
-            // augment with UsageStats if we have less than 5 results
+            // Processes: /proc/[pid]/stat enumeration + UsageStats fallback
             val processes = processMonitor.getProcesses()
             val augmentedProcs = if (processes.size <= 3 && usageStatsHelper.isGranted()) {
                 val recentApps = usageStatsHelper.getRecentProcesses()
@@ -33,9 +37,14 @@ class SystemMonitor(private val context: Context) {
                     .sortedByDescending { it.cpuPercent }
             } else processes
 
+            // CPU cores from /proc/stat
             val cpuCores = cpuMonitor.getCpuStats()
-            val wakeLocks = wakeLockMonitor.getWakeLocks()
-            val alarms = alarmMonitor.getAlarms()
+
+            // Wake lock suspects (multi‑strategy)
+            val wakeLockSuspects = wakeLockDetector.getWakeLockSuspects(augmentedProcs)
+
+            // Alarms (still empty without dumpsys — will be replaced in Phase 3)
+            val alarms = emptyList<AlarmInfo>()
 
             val memInfo = readMemInfo()
             val batteryInfo = getBatteryInfo()
@@ -45,16 +54,16 @@ class SystemMonitor(private val context: Context) {
 
             val totalCpu = if (cpuCores.isNotEmpty()) cpuCores.map { it.usagePercent }.average().toFloat() else 0f
             val topCpu = augmentedProcs.take(10)
-            val topWake = wakeLocks.take(10)
+            val topWake = wakeLockSuspects.take(10)
             val topAlarm = alarms.take(10)
 
             val message = buildString {
                 if (topCpu.size <= 3 && !usageStatsHelper.isGranted()) {
                     append("Grant Usage Access in Settings for more app visibility")
                 }
-                if (wakeLocks.isEmpty() && alarms.isEmpty()) {
+                if (wakeLockSuspects.isEmpty() && alarms.isEmpty()) {
                     if (isNotEmpty()) append(". ")
-                    append("Wake lock & alarm data requires system permissions")
+                    append("Wake lock data inferred from screen-off CPU activity")
                 }
             }
 
@@ -71,7 +80,7 @@ class SystemMonitor(private val context: Context) {
                     batteryPercent = batteryInfo.first,
                     batteryTemperature = batteryInfo.second,
                     deepSleepTimeMs = 0L,
-                    wakeupCount = wakeLocks.size,
+                    wakeupCount = wakeLockSuspects.size,
                     topCpuProcesses = topCpu,
                     topWakeLockApps = topWake,
                     topAlarmApps = topAlarm,
@@ -91,8 +100,8 @@ class SystemMonitor(private val context: Context) {
                         procStatSample = cpuMonitor.rawProcStatSample,
                         processesEnumerated = processMonitor.lastEnumeratedCount,
                         processesReadSuccess = processMonitor.lastReadSuccessCount,
-                        procWakelockAccessible = false,
-                        logcatAccessible = false,
+                        procWakelockAccessible = wakeLockDetector.procWakelockAccessible,
+                        logcatAccessible = wakeLockDetector.logcatAccessible,
                         pollIntervalMs = 2000
                     )
                 )

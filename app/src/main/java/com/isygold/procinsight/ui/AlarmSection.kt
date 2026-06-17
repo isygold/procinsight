@@ -50,7 +50,7 @@ fun AlarmSection(alarms: List<AlarmInfo>) {
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "No alarm data available without system-level permissions.",
+                    "No alarm suspects yet. JobScheduler detection coming in next update.",
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

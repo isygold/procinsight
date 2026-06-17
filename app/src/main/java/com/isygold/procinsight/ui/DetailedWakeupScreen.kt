@@ -43,7 +43,7 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Spacer(Modifier.height(8.dp))
                             Text("Wakeup Sources", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text(
-                                "${stats.data.wakeupCount} active wake locks",
+                                "${stats.data.wakeupCount} suspects · screen ${if (stats.data.diagnostics.procWakelockAccessible) "/proc/wakelocks" else "inference"}",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -51,7 +51,13 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    Text("Wake Locks (${stats.data.topWakeLockApps.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Wake Lock Suspects (${stats.data.topWakeLockApps.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Detection: screen-off CPU tracking + kernel wakelocks + logcat",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(Modifier.height(8.dp))
                 }
 
@@ -64,7 +70,12 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Wake lock data unavailable without system-level permissions.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "No wake lock suspects yet.\n\n" +
+                                            "Turn the screen off and wait — processes that use CPU while the screen is off are likely holding wake locks. Data appears here automatically.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -91,7 +102,7 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Alarm data unavailable without system-level permissions.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Alarm data will be available in a future update (via JobScheduler detection).", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -125,8 +136,20 @@ private fun DetailedWakeLockCard(wl: WakeLockInfo) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(wl.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
-                    Text("UID ${wl.uid} · PID ${wl.pid}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(wl.name, fontWeight = FontWeight.Bold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+                        Spacer(Modifier.width(6.dp))
+                        ConfidenceBadge(wl.confidence)
+                    }
+                    Text(
+                        buildString {
+                            append(wl.detectionMethod)
+                            if (wl.uid > 0) append(" · UID ${wl.uid}")
+                            if (wl.pid > 0) append(" · PID ${wl.pid}")
+                        },
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -139,6 +162,12 @@ private fun DetailedWakeLockCard(wl: WakeLockInfo) {
                         Text("HELD", fontSize = 10.sp, color = Color(0xFFFFA726))
                     }
                 }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                DetailItem("Type", wl.type, Modifier.weight(1f))
+                DetailItem("Package", wl.packageName.ifEmpty { "—" }, Modifier.weight(2f))
             }
         }
     }

@@ -80,19 +80,44 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
 @Composable
 private fun StatusHint(data: SystemStats) {
     val mi = data.monitorInfo
+    val diag = data.diagnostics
     val hints = mutableListOf<Pair<String, Color>>()
 
     if (!mi.usageStatsGranted && data.topCpuProcesses.size <= 3) {
         hints.add("💡 Grant Usage Access in Settings → App Usage Access → ProcInsight to see recently active apps" to Color(0xFF42A5F5))
     }
-    if (!mi.wakeLocksAvailable && !mi.alarmsAvailable) {
-        hints.add("ℹ️ Wake lock & alarm data requires system-level permissions (not available on non-rooted devices)" to Color(0xFFAB47BC))
+    if (data.wakeupCount == 0) {
+        hints.add(
+            "ℹ️ Screen‑off monitoring active: turn screen off to detect wake lock suspects" to Color(0xFFAB47BC)
+        )
+    } else if (data.wakeupCount > 0) {
+        val highCount = data.topWakeLockApps.count { it.confidence.name == "HIGH" }
+        val medCount = data.topWakeLockApps.count { it.confidence.name == "MEDIUM" }
+        hints.add(
+            "🔍 ${data.wakeupCount} wake lock suspects ($highCount HIGH, $medCount MEDIUM confidence)" to Color(0xFF66BB6A)
+        )
     }
-    if (data.topCpuProcesses.size > 3 && mi.usageStatsGranted) {
-        hints.add("✅ Full process monitoring active via /proc enumeration" to Color(0xFF66BB6A))
+    if (data.topCpuProcesses.size > 3) {
+        hints.add(
+            "✅ ${data.topCpuProcesses.size} processes visible via /proc" to Color(0xFF66BB6A)
+        )
     }
-    if (data.topCpuProcesses.size > 3 && !mi.usageStatsGranted) {
-        hints.add("✅ Process monitoring active — ${data.topCpuProcesses.size} processes visible via /proc" to Color(0xFF66BB6A))
+    if (diag.procStatSource.isNotEmpty()) {
+        val sourceColor = when (diag.procStatSource) {
+            "direct" -> Color(0xFF66BB6A)
+            "cat_exec", "sh_exec" -> Color(0xFFFFA726)
+            else -> Color(0xFFFF5252)
+        }
+        hints.add(
+            "📊 /proc/stat via ${
+                when (diag.procStatSource) {
+                    "direct" -> "direct read"
+                    "cat_exec" -> "cat fallback"
+                    "sh_exec" -> "sh fallback"
+                    else -> diag.procStatSource
+                }
+            } (${diag.procStatCoreCount} cores)" to sourceColor
+        )
     }
 
     hints.forEach { (text, color) ->

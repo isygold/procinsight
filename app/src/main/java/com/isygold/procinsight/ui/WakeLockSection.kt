@@ -1,8 +1,6 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
@@ -10,12 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.isygold.procinsight.data.DetectionConfidence
 import com.isygold.procinsight.data.WakeLockInfo
 
 @Composable
@@ -44,13 +42,14 @@ fun WakeLockSection(wakeLocks: List<WakeLockInfo>) {
 
             if (wakeLocks.isNotEmpty()) {
                 Text(
-                    "Worst: ${wakeLocks.first().name} (${wakeLocks.first().totalTimeMs / 1000}s)",
+                    "Worst suspect: ${wakeLocks.first().name} (${wakeLocks.first().totalTimeMs / 1000}s)",
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "No wake lock data available without system-level permissions.",
+                    "No wake lock suspects yet. Turn screen off and wait — " +
+                            "processes using CPU while screen is off will appear here.",
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -69,12 +68,21 @@ fun WakeLockSection(wakeLocks: List<WakeLockInfo>) {
 private fun WakeLockRow(wl: WakeLockInfo) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(wl.name, fontSize = 12.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(wl.name, fontSize = 12.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+                Spacer(Modifier.width(4.dp))
+                ConfidenceBadge(wl.confidence)
+            }
             Text(
-                "UID ${wl.uid}" + if (wl.isHeld) " ● HELD" else "",
+                buildString {
+                    append(wl.detectionMethod)
+                    if (wl.uid > 0) append(" · UID ${wl.uid}")
+                    if (wl.isHeld) append(" · HELD")
+                },
                 fontSize = 10.sp,
                 color = if (wl.isHeld) Color(0xFFFFA726) else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -84,6 +92,27 @@ private fun WakeLockRow(wl: WakeLockInfo) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+@Composable
+fun ConfidenceBadge(confidence: DetectionConfidence) {
+    val (label, color) = when (confidence) {
+        DetectionConfidence.HIGH -> "HIGH" to Color(0xFF66BB6A)
+        DetectionConfidence.MEDIUM -> "MED" to Color(0xFFFFA726)
+        DetectionConfidence.LOW -> "LOW" to Color(0xFFFF5252)
+    }
+    Surface(
+        shape = RoundedCornerShape(3.dp),
+        color = color.copy(alpha = 0.2f)
+    ) {
+        Text(
+            label,
+            fontSize = 8.sp,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
         )
     }
 }
