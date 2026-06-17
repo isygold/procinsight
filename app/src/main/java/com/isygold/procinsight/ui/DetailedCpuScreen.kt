@@ -24,62 +24,78 @@ import com.isygold.procinsight.data.SystemStats
 @Composable
 fun DetailedCpuScreen(stats: Resource<SystemStats>) {
     when (stats) {
-        is Resource.Success -> {
-            val cores = stats.data.perCore
-            val totalAvg = if (cores.isNotEmpty()) cores.map { it.usagePercent }.average().toFloat() else 0f
-
-            if (cores.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("CPU stats unavailable — /proc/stat may be blocked on this device",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.padding(32.dp))
-                }
-                return
+        is Resource.Success -> SuccessfulCpuContent(stats.data)
+        is Resource.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Error loading CPU stats",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp)
             }
+        }
+        is Resource.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+}
 
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
-                item {
-                    Spacer(Modifier.height(8.dp))
+@Composable
+private fun SuccessfulCpuContent(data: SystemStats) {
+    val cores = data.perCore
+    val totalAvg = if (cores.isNotEmpty()) cores.map { it.usagePercent }.average().toFloat() else 0f
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Total CPU Usage", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(
-                                "${"%.1f".format(totalAvg)}%",
-                                fontSize = 42.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                color = when {
-                                    totalAvg > 80 -> Color(0xFFFF5252)
-                                    totalAvg > 50 -> Color(0xFFFFA726)
-                                    else -> Color(0xFF66BB6A)
-                                }
-                            )
-                            Text(
-                                "${stats.data.processes} processes · ${stats.data.threads} threads",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+    if (cores.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("CPU stats unavailable — /proc/stat may be blocked on this device",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(32.dp))
+        }
+        return
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+        item {
+            Spacer(Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Total CPU Usage", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${"%.1f".format(totalAvg)}%",
+                        fontSize = 42.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = when {
+                            totalAvg > 80 -> Color(0xFFFF5252)
+                            totalAvg > 50 -> Color(0xFFFFA726)
+                            else -> Color(0xFF66BB6A)
                         }
-                    }
-
-                    // Diagnostics card
-                    DiagnosticsCard(stats.data.diagnostics)
-
-                    Spacer(Modifier.height(8.dp))
-                    Text("Per-Core Breakdown", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(Modifier.height(8.dp))
+                    )
+                    Text(
+                        "${data.processes} processes · ${data.threads} threads",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-
-                items(cores) { core ->
-                    DetailedCpuCoreCard(core)
-                    Spacer(Modifier.height(6.dp))
             }
+
+            // Diagnostics card
+            DiagnosticsCard(data.diagnostics)
+
+            Spacer(Modifier.height(8.dp))
+            Text("Per-Core Breakdown", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        items(cores) { core ->
+            DetailedCpuCoreCard(core)
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
@@ -179,13 +195,6 @@ private fun DiagnosticsCard(diag: MonitorDiagnostics) {
                         )
                     }
                 }
-            }
-        }
-    }
-}
-        else -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
             }
         }
     }
