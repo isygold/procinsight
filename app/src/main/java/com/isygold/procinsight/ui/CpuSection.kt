@@ -17,8 +17,22 @@ import androidx.compose.ui.unit.sp
 import com.isygold.procinsight.data.CpuCoreInfo
 
 @Composable
-fun CpuSection(cores: List<CpuCoreInfo>) {
+fun CpuSection(cores: List<CpuCoreInfo>, detectionSource: String = "") {
     var expanded by remember { mutableStateOf(false) }
+
+    val sourceLabel = when (detectionSource) {
+        "direct" -> "/proc/stat"
+        "cat_exec" -> "cat /proc/stat"
+        "sh_exec" -> "sh -c cat"
+        "sysfs_only" -> "sysfs fallback"
+        else -> ""
+    }
+    val sourceColor = when (detectionSource) {
+        "direct" -> Color(0xFF66BB6A)
+        "cat_exec", "sh_exec" -> Color(0xFFFFA726)
+        "sysfs_only" -> Color(0xFFFF5252)
+        else -> Color.Gray
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
@@ -35,8 +49,24 @@ fun CpuSection(cores: List<CpuCoreInfo>) {
                     Spacer(Modifier.width(6.dp))
                     Text("CPU Cores (${cores.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Hide" else "Show all")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (sourceLabel.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = sourceColor.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                sourceLabel,
+                                fontSize = 9.sp,
+                                color = sourceColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(if (expanded) "Hide" else "Show all")
+                    }
                 }
             }
 

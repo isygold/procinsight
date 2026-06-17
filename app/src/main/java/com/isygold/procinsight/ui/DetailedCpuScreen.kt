@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.isygold.procinsight.data.CpuCoreInfo
+import com.isygold.procinsight.data.MonitorDiagnostics
 import com.isygold.procinsight.data.Resource
 import com.isygold.procinsight.data.SystemStats
 
@@ -67,6 +68,9 @@ fun DetailedCpuScreen(stats: Resource<SystemStats>) {
                         }
                     }
 
+                    // Diagnostics card
+                    DiagnosticsCard(stats.data.diagnostics)
+
                     Spacer(Modifier.height(8.dp))
                     Text("Per-Core Breakdown", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(Modifier.height(8.dp))
@@ -75,9 +79,108 @@ fun DetailedCpuScreen(stats: Resource<SystemStats>) {
                 items(cores) { core ->
                     DetailedCpuCoreCard(core)
                     Spacer(Modifier.height(6.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticsCard(diag: MonitorDiagnostics) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val sourceColor = when (diag.procStatSource) {
+        "direct" -> Color(0xFF66BB6A)
+        "cat_exec", "sh_exec" -> Color(0xFFFFA726)
+        "sysfs_only" -> Color(0xFFFF5252)
+        else -> Color.Gray
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Diagnostics", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "Details")
+                }
+            }
+
+            // Summary line always visible
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = sourceColor.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        diag.procStatSource.ifEmpty { "unknown" },
+                        fontSize = 10.sp,
+                        color = sourceColor,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "${diag.procStatCoreCount} cores · ${diag.processesEnumerated} PIDs · ${diag.processesReadSuccess} read",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (expanded) {
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+                Spacer(Modifier.height(8.dp))
+
+                DetailItem("Detection source", diag.procStatSource.ifEmpty { "none" })
+                Spacer(Modifier.height(4.dp))
+                DetailItem("CPU lines found", "${diag.procStatCoreCount}")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("PIDs enumerated", "${diag.processesEnumerated}")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("PIDs read OK", "${diag.processesReadSuccess}")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("Poll interval", "${diag.pollIntervalMs}ms")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("/proc/wakelocks", if (diag.procWakelockAccessible) "accessible" else "blocked")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("logcat events", if (diag.logcatAccessible) "accessible" else "blocked")
+
+                if (diag.procStatSample.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Raw /proc/stat (sample):",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            diag.procStatSample,
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color(0xFF69F0AE),
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
             }
         }
+    }
+}
         else -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

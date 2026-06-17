@@ -56,7 +56,7 @@ fun DashboardScreen(stats: Resource<SystemStats>) {
                 Spacer(Modifier.height(8.dp))
 
                 // CPU section
-                CpuSection(data.perCore)
+                CpuSection(data.perCore, data.diagnostics.procStatSource)
 
                 Spacer(Modifier.height(4.dp))
 
