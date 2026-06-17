@@ -50,7 +50,7 @@ fun AlarmSection(alarms: List<AlarmInfo>) {
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "No alarm data. Enable Shizuku or grant Usage Stats for advanced monitoring.",
+                    "No alarm data available without system-level permissions.",
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

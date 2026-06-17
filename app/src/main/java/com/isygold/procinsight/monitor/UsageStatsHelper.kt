@@ -64,6 +64,6 @@ class UsageStatsHelper(private val context: Context) {
     }
 
     companion object {
-        const val PERMISSION_HINT = "Grant Usage Access in Settings to see recently active apps, or install Shizuku and switch to ADV mode for full process monitoring."
+        const val PERMISSION_HINT = "Grant Usage Access in Settings to see recently active apps."
     }
 }

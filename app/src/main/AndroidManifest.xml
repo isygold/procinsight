@@ -11,8 +11,6 @@
     <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_PRECISE_PHONE_STATE" />
-    <uses-permission android:name="moe.shizuku.manager.permission.API_V2" />
-
     <application
         android:name=".ProcInsightApp"
         android:allowBackup="true"
@@ -38,14 +36,6 @@
             android:name=".service.MonitorService"
             android:foregroundServiceType="specialUse"
             android:exported="false" />
-
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:enabled="true"
-            android:exported="true"
-            android:multiprocess="false"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
     </application>
 

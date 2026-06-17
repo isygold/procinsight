@@ -64,7 +64,7 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Enable Shizuku or grant Usage Stats access to view wake locks.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Wake lock data unavailable without system-level permissions.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(Modifier.height(8.dp))
@@ -91,7 +91,7 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Enable Shizuku or grant Usage Stats access to view alarm data.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Alarm data unavailable without system-level permissions.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(Modifier.height(8.dp))

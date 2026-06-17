@@ -24,7 +24,6 @@ import com.isygold.procinsight.detective.session.ProfilingSession
 import com.isygold.procinsight.detective.ui.DetectiveScreen
 import com.isygold.procinsight.detective.ui.DiagnosisResultScreen
 import com.isygold.procinsight.monitor.MainViewModel
-import com.isygold.procinsight.monitor.MonitorMode
 import com.isygold.procinsight.service.MonitorService
 import com.isygold.procinsight.ui.DashboardScreen
 import com.isygold.procinsight.ui.DetailedCpuScreen
@@ -65,8 +64,6 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val stats by viewModel.stats.collectAsState()
                 val isMonitoring by viewModel.isMonitoring.collectAsState()
-                val monitorMode by viewModel.mode.collectAsState()
-                val shizukuAvailable by viewModel.shizukuAvailable.collectAsState()
                 var selectedTab by remember { mutableStateOf(0) }
                 var diagnosis by remember { mutableStateOf<DrainDiagnosis?>(null) }
 
@@ -96,14 +93,6 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = "Recording",
                                         tint = Color(0xFFFF5252),
                                         modifier = Modifier.size(16.dp)
-                                    )
-                                }
-
-                                TextButton(onClick = { viewModel.toggleMode() }) {
-                                    Text(
-                                        if (monitorMode == MonitorMode.ADVANCED) "ADV" else "BAS",
-                                        fontSize = 11.sp,
-                                        color = if (shizukuAvailable) MaterialTheme.colorScheme.primary else Color(0xFFFFA726)
                                     )
                                 }
 

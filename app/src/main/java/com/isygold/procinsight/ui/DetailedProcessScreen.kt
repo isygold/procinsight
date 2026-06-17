@@ -37,17 +37,13 @@ fun DetailedProcessScreen(stats: Resource<SystemStats>) {
                     Spacer(Modifier.height(4.dp))
 
                     // Show hint when limited visibility
-                    if (processes.size <= 2 && !mi.shizukuConnected) {
+                    if (processes.size <= 2) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFFFA726).copy(alpha = 0.12f))
                         ) {
                             Text(
-                                "Only your own process is visible. Android 11+ hides other processes from normal apps.\n\n" +
-                                        "To see all running processes:\n" +
-                                        "1. Install Shizuku from shizuku.rikka.app\n" +
-                                        "2. Start the Shizuku service\n" +
-                                        "3. Switch to ADVANCED mode",
+                                "Only your own process is visible via /proc. Android 11+ restricts cross-process /proc reads on many devices.",
                                 fontSize = 11.sp,
                                 color = Color(0xFFFFA726),
                                 modifier = Modifier.padding(12.dp)
@@ -61,7 +57,7 @@ fun DetailedProcessScreen(stats: Resource<SystemStats>) {
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF42A5F5).copy(alpha = 0.12f))
                             ) {
                                 Text(
-                                    "Alternatively, grant Usage Access in Settings -> App Usage Access -> ProcInsight to see recently active apps (without PID/CPU data).",
+                                    "Grant Usage Access in Settings → App Usage Access → ProcInsight to see recently active apps (without PID/CPU data).",
                                     fontSize = 11.sp,
                                     color = Color(0xFF42A5F5),
                                     modifier = Modifier.padding(12.dp)
@@ -69,21 +65,6 @@ fun DetailedProcessScreen(stats: Resource<SystemStats>) {
                             }
                             Spacer(Modifier.height(8.dp))
                         }
-                    }
-
-                    if (mi.shizukuConnected) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF66BB6A).copy(alpha = 0.12f))
-                        ) {
-                            Text(
-                                "✅ Shizuku active: showing all processes",
-                                fontSize = 11.sp,
-                                color = Color(0xFF66BB6A),
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
                     }
 
                     Spacer(Modifier.height(4.dp))

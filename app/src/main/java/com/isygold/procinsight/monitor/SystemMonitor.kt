@@ -9,85 +9,52 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 
-enum class MonitorMode { BASIC, ADVANCED }
-
 class SystemMonitor(private val context: Context) {
 
     private val processMonitor = ProcessMonitor(context)
     private val cpuMonitor = CpuMonitor()
-    private val basicWakeLockMonitor = WakeLockMonitor()
-    private val basicAlarmMonitor = AlarmMonitor()
-    private val advancedProcessMonitor = AdvancedProcessMonitor()
-    private val advancedWakeLockMonitor = AdvancedWakeLockMonitor()
-    private val advancedAlarmMonitor = AdvancedAlarmMonitor()
-    val shizukuManager = ShizukuManager(context)
+    private val wakeLockMonitor = WakeLockMonitor()
+    private val alarmMonitor = AlarmMonitor()
     val usageStatsHelper = UsageStatsHelper(context)
 
     private val _stats = MutableStateFlow<Resource<SystemStats>>(Resource.Loading())
     val stats: StateFlow<Resource<SystemStats>> = _stats
 
-    private val _mode = MutableStateFlow(MonitorMode.BASIC)
-    val mode: StateFlow<MonitorMode> = _mode
-
-    fun setMode(newMode: MonitorMode) {
-        _mode.value = newMode
-    }
-
     suspend fun refresh() {
         try {
             _stats.value = Resource.Loading()
 
-            val isAdvanced = _mode.value == MonitorMode.ADVANCED && shizukuManager.checkAvailability()
-            val shizukuState = shizukuManager.state.value
-
-            // Processes: advanced via Shizuku, or BASIC with UsageStats fallback
-            val processes = if (isAdvanced) {
-                advancedProcessMonitor.getProcesses()
-            } else {
-                val basicProcs = processMonitor.getProcesses()
-                if (basicProcs.size <= 2 && usageStatsHelper.isGranted()) {
-                    // Only our own process is visible; augment with UsageStats
-                    val recentApps = usageStatsHelper.getRecentProcesses()
-                    (basicProcs + recentApps).distinctBy { it.packageName }
-                        .sortedByDescending { it.cpuPercent }
-                } else {
-                    basicProcs
-                }
-            }
+            // Processes: try /proc/[pid]/stat for all PIDs,
+            // augment with UsageStats if we have less than 5 results
+            val processes = processMonitor.getProcesses()
+            val augmentedProcs = if (processes.size <= 3 && usageStatsHelper.isGranted()) {
+                val recentApps = usageStatsHelper.getRecentProcesses()
+                (processes + recentApps).distinctBy { it.packageName.ifEmpty { it.name } }
+                    .sortedByDescending { it.cpuPercent }
+            } else processes
 
             val cpuCores = cpuMonitor.getCpuStats()
-            val wakeLocks = if (isAdvanced) advancedWakeLockMonitor.getWakeLocks() else basicWakeLockMonitor.getWakeLocks()
-            val alarms = if (isAdvanced) advancedAlarmMonitor.getAlarms() else basicAlarmMonitor.getAlarms()
+            val wakeLocks = wakeLockMonitor.getWakeLocks()
+            val alarms = alarmMonitor.getAlarms()
 
             val memInfo = readMemInfo()
             val batteryInfo = getBatteryInfo()
             val upTime = readUptime()
             val allPids = processCount()
-            val allThreads = processes.sumOf { it.threads }
+            val allThreads = augmentedProcs.sumOf { it.threads }
 
             val totalCpu = if (cpuCores.isNotEmpty()) cpuCores.map { it.usagePercent }.average().toFloat() else 0f
-            val topCpu = processes.take(10)
+            val topCpu = augmentedProcs.take(10)
             val topWake = wakeLocks.take(10)
             val topAlarm = alarms.take(10)
 
-            // Run a test command to detect Shizuku execution issues
-            val shizukuTestResult = if (shizukuState.available && shizukuState.authorized) {
-                shizukuManager.testExecution()
-            } else ""
-
             val message = buildString {
-                if (shizukuState.available && shizukuState.authorized) {
-                    append("Shizuku active — full monitoring")
-                } else if (shizukuState.available && !shizukuState.authorized) {
-                    append("Shizuku connected — OPEN Shizuku app and GRANT authorization to ProcInsight")
-                } else {
-                    if (!shizukuState.available) {
-                        append("Install & start Shizuku for full monitoring")
-                    }
-                    if (topCpu.size <= 2) {
-                        if (isNotEmpty()) append(". ")
-                        append("Android hides other processes without Shizuku")
-                    }
+                if (topCpu.size <= 3 && !usageStatsHelper.isGranted()) {
+                    append("Grant Usage Access in Settings for more app visibility")
+                }
+                if (wakeLocks.isEmpty() && alarms.isEmpty()) {
+                    if (isNotEmpty()) append(". ")
+                    append("Wake lock & alarm data requires system permissions")
                 }
             }
 
@@ -109,18 +76,14 @@ class SystemMonitor(private val context: Context) {
                     topWakeLockApps = topWake,
                     topAlarmApps = topAlarm,
                     monitorInfo = MonitorInfo(
-                        monitorMode = if (isAdvanced) "advanced" else "basic",
-                        processesAvailable = topCpu.isNotEmpty() || isAdvanced,
+                        monitorMode = "basic",
+                        processesAvailable = topCpu.isNotEmpty(),
                         wakeLocksAvailable = topWake.isNotEmpty(),
                         alarmsAvailable = topAlarm.isNotEmpty(),
-                        cpuAdvanced = isAdvanced,
                         message = message,
-                        shizukuConnected = shizukuState.available,
-                        shizukuAuthorized = shizukuState.authorized,
-                        shizukuMessage = if (shizukuTestResult.isNotEmpty()) shizukuTestResult
-                            else shizukuState.detail.ifEmpty { shizukuState.message },
                         usageStatsGranted = usageStatsHelper.isGranted(),
-                        usageStatsMessage = if (usageStatsHelper.isGranted()) "" else "Grant Usage Access in Settings for app list"
+                        usageStatsMessage = if (usageStatsHelper.isGranted()) ""
+                            else "Grant Usage Access in Settings for app activity list"
                     )
                 )
             )

@@ -65,8 +65,5 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    implementation("dev.rikka.shizuku:api:13.1.5")
-    implementation("dev.rikka.shizuku:provider:13.1.5")
-
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

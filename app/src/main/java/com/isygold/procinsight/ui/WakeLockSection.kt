@@ -50,7 +50,7 @@ fun WakeLockSection(wakeLocks: List<WakeLockInfo>) {
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "No wake lock data. Enable Shizuku or grant Usage Stats for advanced monitoring.",
+                    "No wake lock data available without system-level permissions.",
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

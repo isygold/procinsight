@@ -50,15 +50,6 @@ class CpuMonitor {
             }
         } catch (_: Exception) { }
 
-        // Layer 4: try via Shizuku if available
-        try {
-            val result = ShizukuManager.execute("cat /proc/stat")
-            if (result != null && result.isNotEmpty()) {
-                val cpuLines = result.lines().filter { it.startsWith("cpu") && it.length > 3 }
-                if (cpuLines.isNotEmpty()) return cpuLines
-            }
-        } catch (_: Exception) { }
-
         return emptyList()
     }
 
