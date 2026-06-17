@@ -26,6 +26,8 @@ data class MonitorDiagnostics(
     val procWakelockAccessible: Boolean = false,
     /** Whether logcat -b events is accessible */
     val logcatAccessible: Boolean = false,
+    /** Whether JobScheduler.getAllPendingJobs is accessible */
+    val jobSchedulerAccessible: Boolean = false,
     /** Poll interval in ms */
     val pollIntervalMs: Long = 2000
 )

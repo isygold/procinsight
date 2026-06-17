@@ -16,6 +16,7 @@ class SystemMonitor(private val context: Context) {
     val usageStatsHelper = UsageStatsHelper(context)
     val batteryState = BatteryStateTracker(context)
     private val wakeLockDetector = WakeLockDetector(context, batteryState)
+    private val alarmDetector = AlarmDetector(context)
 
     private val _stats = MutableStateFlow<Resource<SystemStats>>(Resource.Loading())
     val stats: StateFlow<Resource<SystemStats>> = _stats
@@ -43,8 +44,8 @@ class SystemMonitor(private val context: Context) {
             // Wake lock suspects (multi‑strategy)
             val wakeLockSuspects = wakeLockDetector.getWakeLockSuspects(augmentedProcs)
 
-            // Alarms (still empty without dumpsys — will be replaced in Phase 3)
-            val alarms = emptyList<AlarmInfo>()
+            // Alarms via JobScheduler (no permissions needed)
+            val alarms = alarmDetector.getAlarmSuspects()
 
             val memInfo = readMemInfo()
             val batteryInfo = getBatteryInfo()
@@ -102,7 +103,8 @@ class SystemMonitor(private val context: Context) {
                         processesReadSuccess = processMonitor.lastReadSuccessCount,
                         procWakelockAccessible = wakeLockDetector.procWakelockAccessible,
                         logcatAccessible = wakeLockDetector.logcatAccessible,
-                        pollIntervalMs = 2000
+                        pollIntervalMs = 2000,
+                        jobSchedulerAccessible = alarmDetector.jobSchedulerAccessible
                     )
                 )
             )

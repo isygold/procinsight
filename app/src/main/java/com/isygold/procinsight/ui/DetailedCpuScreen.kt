@@ -154,6 +154,8 @@ private fun DiagnosticsCard(diag: MonitorDiagnostics) {
                 DetailItem("/proc/wakelocks", if (diag.procWakelockAccessible) "accessible" else "blocked")
                 Spacer(Modifier.height(4.dp))
                 DetailItem("logcat events", if (diag.logcatAccessible) "accessible" else "blocked")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("JobScheduler", if (diag.jobSchedulerAccessible) "accessible" else "blocked")
 
                 if (diag.procStatSample.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
