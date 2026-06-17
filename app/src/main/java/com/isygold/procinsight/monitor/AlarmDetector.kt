@@ -57,11 +57,12 @@ class AlarmDetector(private val context: Context) {
                         count = 1,
                         lastTrigger = 0L,
                         nextTrigger = if (job.isPeriodic) {
-                            try { job.nextScheduleTimeMillis } catch (_: Exception) { 0L }
+                            // getNextScheduleTimeMillis is @SystemApi (hidden), unavailable in public SDK
+                            0L
                         } else 0L,
                         operation = cls.substringAfterLast('.'),
                         isExact = false,
-                        isWhileIdle = job.isRequiresDeviceIdle || job.isRequiresCharging
+                        isWhileIdle = job.isRequiresDeviceIdle() || job.isRequiresCharging()
                     )
                 } catch (_: Exception) { null }
             }
