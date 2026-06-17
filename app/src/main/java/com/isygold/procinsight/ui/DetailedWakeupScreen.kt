@@ -102,7 +102,7 @@ fun DetailedWakeupScreen(stats: Resource<SystemStats>) {
                             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color(0xFFFFA726))
                                 Spacer(Modifier.height(8.dp))
-                                Text("Alarm data will be available in a future update (via JobScheduler detection).", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("No scheduled jobs detected. Jobs appear here when apps schedule background work via JobScheduler.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(Modifier.height(8.dp))

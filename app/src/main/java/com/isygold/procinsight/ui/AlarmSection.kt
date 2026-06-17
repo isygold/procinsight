@@ -1,8 +1,6 @@
 package com.isygold.procinsight.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -44,13 +42,13 @@ fun AlarmSection(alarms: List<AlarmInfo>) {
 
             if (alarms.isNotEmpty()) {
                 Text(
-                    "Top: ${alarms.first().packageName} x${alarms.first().count}",
+                    "Top: ${alarms.first().packageName} · ${alarms.first().operation}",
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "No alarm suspects yet. JobScheduler detection coming in next update.",
+                    "No scheduled jobs. Apps with pending JobScheduler work appear here.",
                     fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -69,15 +67,28 @@ fun AlarmSection(alarms: List<AlarmInfo>) {
 private fun AlarmRow(alarm: AlarmInfo) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(alarm.packageName, fontSize = 12.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
-            Text(
-                if (alarm.isExact) "EXACT" else "INEXACT",
-                fontSize = 10.sp, color = if (alarm.isExact) Color(0xFFFF5252) else Color(0xFF69F0AE)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (alarm.isExact) "EXACT" else "inexact",
+                    fontSize = 10.sp,
+                    color = if (alarm.isExact) Color(0xFFFF5252) else Color(0xFF69F0AE)
+                )
+                if (alarm.isWhileIdle) {
+                    Text(" · IDLE", fontSize = 10.sp, color = Color(0xFFFFA726))
+                }
+                Text(" · ${alarm.operation}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        Text("x${alarm.count}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Column(horizontalAlignment = Alignment.End) {
+            Text("x${alarm.count}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            if (alarm.interval > 0) {
+                Text("every ${alarm.interval / 1000}s", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
