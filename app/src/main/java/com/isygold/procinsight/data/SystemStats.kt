@@ -20,8 +20,14 @@ data class MonitorDiagnostics(
     val procStatSample: String = "",
     /** Total PIDs listed in /proc/ */
     val processesEnumerated: Int = 0,
-    /** PIDs whose /proc/[pid]/stat was successfully read */
+    /** PIDs whose /proc/[pid]/stat was successfully read (CPU data) */
     val processesReadSuccess: Int = 0,
+    /** PIDs where at minimum a name could be resolved (via cmdline/status/ps) */
+    val processesNamedOnly: Int = 0,
+    /** Whether ps -A exec fallback succeeded */
+    val psAccessible: Boolean = false,
+    /** Whether /proc/net/tcp parsing succeeded for UID extraction */
+    val netTcpAccessible: Boolean = false,
     /** Whether /proc/wakelocks is accessible */
     val procWakelockAccessible: Boolean = false,
     /** Whether logcat -b events is accessible */

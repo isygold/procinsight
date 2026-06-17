@@ -30,13 +30,15 @@ class SystemMonitor(private val context: Context) {
             _stats.value = Resource.Loading()
             batteryState.updateDeviceIdle()
 
-            // Processes: /proc/[pid]/stat enumeration + UsageStats fallback
+            // Processes: /proc/[pid]/stat enumeration + UsageStats always merged
             val processes = processMonitor.getProcesses()
-            val augmentedProcs = if (processes.size <= 3 && usageStatsHelper.isGranted()) {
+            val augmentedProcs = if (usageStatsHelper.isGranted()) {
                 val recentApps = usageStatsHelper.getRecentProcesses()
                 (processes + recentApps).distinctBy { it.packageName.ifEmpty { it.name } }
                     .sortedByDescending { it.cpuPercent }
             } else processes
+
+            val totalProcesses = processMonitor.lastNamedCount
 
             // CPU cores from /proc/stat
             val cpuCores = cpuMonitor.getCpuStats()
@@ -75,7 +77,7 @@ class SystemMonitor(private val context: Context) {
                     totalMemoryMb = memInfo.totalMb,
                     usedMemoryMb = memInfo.usedMb,
                     freeMemoryMb = memInfo.freeMb,
-                    processes = allPids,
+                    processes = totalProcesses,
                     threads = allThreads,
                     uptimeMs = upTime,
                     batteryPercent = batteryInfo.first,
@@ -101,6 +103,9 @@ class SystemMonitor(private val context: Context) {
                         procStatSample = cpuMonitor.rawProcStatSample,
                         processesEnumerated = processMonitor.lastEnumeratedCount,
                         processesReadSuccess = processMonitor.lastReadSuccessCount,
+                        processesNamedOnly = processMonitor.lastNamedCount,
+                        psAccessible = processMonitor.psAccessible,
+                        netTcpAccessible = processMonitor.netTcpAccessible,
                         procWakelockAccessible = wakeLockDetector.procWakelockAccessible,
                         logcatAccessible = wakeLockDetector.logcatAccessible,
                         pollIntervalMs = 2000,

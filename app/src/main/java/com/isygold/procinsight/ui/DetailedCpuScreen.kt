@@ -146,7 +146,7 @@ private fun DiagnosticsCard(diag: MonitorDiagnostics) {
                 }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "${diag.procStatCoreCount} cores · ${diag.processesEnumerated} PIDs · ${diag.processesReadSuccess} read",
+                    "${diag.procStatCoreCount} cores · ${diag.processesEnumerated} PIDs · ${diag.processesReadSuccess} CPU · ${diag.processesNamedOnly} names",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -163,7 +163,13 @@ private fun DiagnosticsCard(diag: MonitorDiagnostics) {
                 Spacer(Modifier.height(4.dp))
                 DetailItem("PIDs enumerated", "${diag.processesEnumerated}")
                 Spacer(Modifier.height(4.dp))
-                DetailItem("PIDs read OK", "${diag.processesReadSuccess}")
+                DetailItem("PIDs read (CPU)", "${diag.processesReadSuccess}")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("PIDs named", "${diag.processesNamedOnly}")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("ps -A", if (diag.psAccessible) "accessible" else "blocked")
+                Spacer(Modifier.height(4.dp))
+                DetailItem("/proc/net/tcp", if (diag.netTcpAccessible) "accessible" else "blocked")
                 Spacer(Modifier.height(4.dp))
                 DetailItem("Poll interval", "${diag.pollIntervalMs}ms")
                 Spacer(Modifier.height(4.dp))
